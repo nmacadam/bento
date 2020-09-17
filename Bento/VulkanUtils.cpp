@@ -94,6 +94,27 @@ ImageData VulkanUtils::createImage(vk::Device device, vk::PhysicalDevice physica
 	return data;
 }
 
+vk::UniqueImageView VulkanUtils::createImageView(vk::Device device, vk::Image image, vk::Format format)
+{
+	// apply a standard component mapping (for swizzling)
+	const vk::ComponentMapping componentMapping(vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA);
+	// subresource range describes the image's purpose and which parts to access
+	// our image is a color target without mipmapping or multiple layers (for now)
+	const vk::ImageSubresourceRange subResourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+
+	// create a new image view
+	const vk::ImageViewCreateInfo imageViewCreateInfo(
+		vk::ImageViewCreateFlags(),
+		image,
+		vk::ImageViewType::e2D,
+		format,
+		componentMapping,
+		subResourceRange
+	);
+
+	return device.createImageViewUnique(imageViewCreateInfo);
+}
+
 VkResult VulkanUtils::CreateDebugUtilsMessengerEXT(VkInstance instance,
 	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator,
 	VkDebugUtilsMessengerEXT* pDebugMessenger)

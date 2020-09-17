@@ -82,6 +82,8 @@ private:
 
 	// bundle
 	ImageData textureImage;
+	vk::UniqueImageView textureImageView;
+	vk::UniqueSampler textureSampler;
 
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 	size_t currentFrame = 0;
@@ -123,6 +125,8 @@ private:
 	void createCommandPool();
 	// move this out
 	void createTextureImage();
+	void createTextureImageView();
+	void createTextureSampler();
 	
 	void createVertexBuffer();
 	void createIndexBuffer();

@@ -141,6 +141,8 @@ void Renderer::initalizeVulkan()
 	createFramebuffers();
 	createCommandPool();
 	createTextureImage();
+	createTextureImageView();
+	createTextureSampler();
 	createVertexBuffer();
 	createIndexBuffer();
 	createUniformBuffers();
@@ -323,6 +325,10 @@ void Renderer::createLogicalDevice()
 		queueCreateInfos.push_back(queueCreateInfo);
 	}
 
+	// Request specific device features
+	vk::PhysicalDeviceFeatures deviceFeatures;
+	deviceFeatures.samplerAnisotropy = true;
+
 	// get a list of extensions to enable for the device
 	std::vector<char const *> enabledExtensions;
 	enabledExtensions.reserve(deviceExtensions.size());
@@ -337,7 +343,7 @@ void Renderer::createLogicalDevice()
 		queueCreateInfos,
 		{},
 		enabledExtensions,
-		{}
+		&deviceFeatures
 	);
 
 	// create UniqueDevice
@@ -426,24 +432,10 @@ void Renderer::createImageViews()
 
 	swapChainImageViews.reserve(swapChainImages.size());
 
-	// apply a standard component mapping (for swizzling)
-	vk::ComponentMapping componentMapping(vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA);
-	// subresource range describes the image's purpose and which parts to access
-	// our image is a color target without mipmapping or multiple layers (for now)
-	vk::ImageSubresourceRange subResourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-
 	// create a new image view for each swap chain image
 	for (const auto swapChainImage : swapChainImages)
 	{
-		vk::ImageViewCreateInfo imageViewCreateInfo(
-			vk::ImageViewCreateFlags(),
-			swapChainImage,
-			vk::ImageViewType::e2D,
-			swapChainImageFormat, 
-			componentMapping, 
-			subResourceRange
-		);
-		swapChainImageViews.push_back(device->createImageViewUnique(imageViewCreateInfo));
+		swapChainImageViews.push_back(VulkanUtils::createImageView(device.get(), swapChainImage, swapChainImageFormat));
 	}
 
 	std::cout << "[INFO] : " << "Created swap chain image views" << std::endl;
@@ -788,6 +780,49 @@ void Renderer::createTextureImage()
 		vk::ImageLayout::eTransferDstOptimal,
 		vk::ImageLayout::eShaderReadOnlyOptimal
 	);
+
+	std::cout << "[INFO] : " << "Created texture image" << std::endl;
+}
+
+void Renderer::createTextureImageView()
+{
+	textureImageView = VulkanUtils::createImageView(device.get(), textureImage.image.get(), vk::Format::eR8G8B8A8Srgb);
+
+	std::cout << "[INFO] : " << "Created texture image view" << std::endl;
+}
+
+void Renderer::createTextureSampler()
+{
+	// specify sampler info
+	// - mag/min filters specify how to interpolate texels that are magnified or minified
+	// - mipmap mode
+	// - address mode defines how to read the texture past the image dimensions (i.e. repeat, clamp, etc.)
+	// - mipmap lod bias
+	// - anisotropy enable specifies whether to use anisotropic filtering; no reason not to use this unless performance is a concern
+	// - max anisotropy limits the amount of texel samples used to calculate the final result
+	// - compare operation is used for filtering; texels will first be compared to a value, and the result is used in the filtering operation
+	// - min/max lod 
+	// - border color is the color returned when sampling beyond the image with clamp to border addressing
+	// - unnormalized coordinates; should coordinates not be in the [0, 1) range? they probably should
+	vk::SamplerCreateInfo samplerInfo(
+		{},
+		vk::Filter::eLinear,
+		vk::Filter::eLinear,
+		vk::SamplerMipmapMode::eLinear,
+		vk::SamplerAddressMode::eRepeat,
+		vk::SamplerAddressMode::eRepeat,
+		vk::SamplerAddressMode::eRepeat,
+		0.0f,
+		true, 16.0f,
+		false, vk::CompareOp::eAlways,
+		0.0f, 0.0f,
+		vk::BorderColor::eIntOpaqueBlack,
+		false
+	);
+
+	textureSampler = device->createSamplerUnique(samplerInfo);
+
+	std::cout << "[INFO] : " << "Created texture sampler" << std::endl;
 }
 
 void Renderer::createVertexBuffer()
@@ -1056,7 +1091,10 @@ bool Renderer::isDeviceSuitable(vk::PhysicalDevice device)
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 	}
 
-	return indices.isComplete() && extensionsSupported && swapChainAdequate;
+	vk::PhysicalDeviceFeatures supportedFeatures;
+	device.getFeatures(&supportedFeatures);
+
+	return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }
 
 bool Renderer::checkDeviceExtensionSupport(vk::PhysicalDevice device)
