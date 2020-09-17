@@ -8,6 +8,7 @@
 #include "SwapChainSupportDetails.h"
 #include "Vertex.h"
 #include "BufferData.h"
+#include "ImageData.h"
 
 class Renderer
 {
@@ -77,6 +78,11 @@ private:
 
 	std::vector<BufferData> uniformBufferData;
 
+	BufferData stagingBuffer;
+
+	// bundle
+	ImageData textureImage;
+
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 	size_t currentFrame = 0;
 
@@ -115,6 +121,9 @@ private:
 	void createGraphicsPipeline();
 	void createFramebuffers();
 	void createCommandPool();
+	// move this out
+	void createTextureImage();
+	
 	void createVertexBuffer();
 	void createIndexBuffer();
 	void createUniformBuffers();

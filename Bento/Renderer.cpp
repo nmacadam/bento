@@ -10,6 +10,7 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <stb_image.h>
 
 //static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
 //	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
@@ -139,6 +140,7 @@ void Renderer::initalizeVulkan()
 	createGraphicsPipeline();
 	createFramebuffers();
 	createCommandPool();
+	createTextureImage();
 	createVertexBuffer();
 	createIndexBuffer();
 	createUniformBuffers();
@@ -716,6 +718,76 @@ void Renderer::createCommandPool()
 		vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlags(), queueFamilyIndices.graphicsFamily.value()));
 
 	std::cout << "[INFO] : " << "Created command pool" << std::endl;
+}
+
+void Renderer::createTextureImage()
+{
+	// retrieve image pixels with stbi
+	int texWidth, texHeight, texChannels;
+	stbi_uc* pixels = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+	// calculate image size (x4 for the rgba)
+	vk::DeviceSize imageSize = texWidth * texHeight * 4;
+
+	if (!pixels) {
+		throw std::runtime_error("failed to load texture image!");
+	}
+
+	// create a staging buffer for the image pixels so we can then transfer
+	stagingBuffer = VulkanUtils::createBuffer(
+		device.get(),
+		imageSize,
+		physicalDevice,
+		vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+	);
+
+	// copy the pixel data to the staging buffer
+	void* data = device->mapMemory(stagingBuffer.memory.get(), 0, imageSize, {});
+	memcpy(data, pixels, static_cast<size_t>(imageSize));
+	device->unmapMemory(stagingBuffer.memory.get());
+
+	// free image pixel memory
+	stbi_image_free(pixels);
+
+	// create the image
+	textureImage = VulkanUtils::createImage(
+		device.get(),
+		physicalDevice, 
+		texWidth,
+		texHeight, 
+		vk::Format::eR8G8B8A8Srgb,
+		vk::ImageTiling::eOptimal,
+		vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+		vk::MemoryPropertyFlagBits::eDeviceLocal
+	);
+
+	// prepare the image to be copied (using transfer destination optimal)
+	VulkanUtils::transitionImageLayout(
+		device.get(), commandPool.get(), graphicsQueue, 
+		textureImage.image.get(),
+		vk::Format::eR8G8B8A8Srgb,
+		vk::ImageLayout::eUndefined, 
+		vk::ImageLayout::eTransferDstOptimal
+	);
+
+	// copy staging buffer contents to image
+	VulkanUtils::copyBufferToImage(
+		device.get(), commandPool.get(), graphicsQueue,
+		stagingBuffer.buffer.get(),
+		textureImage.image.get(),
+		texWidth,
+		texHeight
+	);
+
+	// transition layout to prepare for shader access
+	VulkanUtils::transitionImageLayout(
+		device.get(), commandPool.get(), graphicsQueue,
+		textureImage.image.get(),
+		vk::Format::eR8G8B8A8Srgb,
+		vk::ImageLayout::eTransferDstOptimal,
+		vk::ImageLayout::eShaderReadOnlyOptimal
+	);
 }
 
 void Renderer::createVertexBuffer()

@@ -56,6 +56,44 @@ BufferData VulkanUtils::createBuffer(vk::Device device, vk::DeviceSize size, vk:
 	return data;
 }
 
+ImageData VulkanUtils::createImage(vk::Device device, vk::PhysicalDevice physicalDevice, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling,
+	vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties)
+{
+	ImageData data;
+
+	// specify image data to create a image from
+	vk::ImageCreateInfo imageInfo(
+		{},
+		vk::ImageType::e2D,
+		format,
+		vk::Extent3D(width, height, 1),
+		1,
+		1,
+		vk::SampleCountFlagBits::e1,
+		tiling,
+		usage,
+		vk::SharingMode::eExclusive
+	);
+
+	// create image
+	data.image = device.createImageUnique(imageInfo);
+
+	// collect memory requirements and allocation info for image memory
+	vk::MemoryRequirements memoryRequirements = device.getImageMemoryRequirements(data.image.get());
+	vk::MemoryAllocateInfo allocateInfo(
+		memoryRequirements.size,
+		VulkanUtils::findMemoryType(physicalDevice.getMemoryProperties(), memoryRequirements.memoryTypeBits, properties)
+	);
+
+	// allocate memory
+	data.memory = device.allocateMemoryUnique(allocateInfo);
+
+	// bind image to memory
+	device.bindImageMemory(data.image.get(), data.memory.get(), 0);
+
+	return data;
+}
+
 VkResult VulkanUtils::CreateDebugUtilsMessengerEXT(VkInstance instance,
 	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator,
 	VkDebugUtilsMessengerEXT* pDebugMessenger)
@@ -122,33 +160,39 @@ void VulkanUtils::copyBuffer(vk::Device device, vk::CommandPool pool, vk::Queue 
 	// could be optimized for multiple transfers at once
 	// memory transfer operations are executed using command buffers
 
-	// we need to allocate a temporary command buffer
-	vk::CommandBufferAllocateInfo allocateInfo(
-		pool,
-		vk::CommandBufferLevel::ePrimary,
-		1
-	);
+	// begin recording commands
+	vk::CommandBuffer commandBuffer = beginSingleTimeCommands(device, pool);
 
-	vk::CommandBuffer commandBuffer;
-	device.allocateCommandBuffers(&allocateInfo, &commandBuffer);
-
-	// begin recording command buffer
-	// we're only going to use the buffer once nad wait with returning from the function or until the copy has finished
-	// we'll inform the driver about our intent with OneTimeSubmit
-	commandBuffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
-
+	// copy the source buffer to the destination buffer
 	commandBuffer.copyBuffer(srcBuffer, dstBuffer, vk::BufferCopy(0, 0, size));
 
-	commandBuffer.end();
+	// stop recording commands
+	endSingleTimeCommands(commandBuffer, device, pool, queue);
+}
 
-	vk::SubmitInfo submitInfo;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
+void VulkanUtils::copyBufferToImage(vk::Device device, vk::CommandPool pool, vk::Queue queue, vk::Buffer srcBuffer,
+	vk::Image dstImage, uint32_t width, uint32_t height)
+{
+	// begin recording commands
+	vk::CommandBuffer commandBuffer = beginSingleTimeCommands(device, pool);
 
-	queue.submit(1, &submitInfo, nullptr);
-	queue.waitIdle();
+	vk::BufferImageCopy region(
+		0,
+		0,
+		0, 
+		vk::ImageSubresourceLayers(
+			vk::ImageAspectFlagBits::eColor,
+			0,
+			0,
+			1
+		), 
+		vk::Offset3D(0, 0, 0),
+		vk::Extent3D(width, height, 1)
+	);
+	commandBuffer.copyBufferToImage(srcBuffer, dstImage, vk::ImageLayout::eTransferDstOptimal, 1, &region);
 
-	device.freeCommandBuffers(pool, 1, &commandBuffer);
+	// stop recording commands
+	endSingleTimeCommands(commandBuffer, device, pool, queue);
 }
 
 //vk::UniqueDebugUtilsMessengerEXT VulkanUtils::createDebugUtilsMessenger(vk::UniqueInstance& instance)
@@ -180,4 +224,108 @@ bool VulkanUtils::checkLayers(std::vector<const char*> const& layers,
 			return strcmp(property.layerName, name) == 0;
 		}) != properties.end();
 	});
+}
+
+// requires a subsequent call to endSingleTimeCommands!
+vk::CommandBuffer VulkanUtils::beginSingleTimeCommands(vk::Device device, vk::CommandPool pool)
+{
+	// we need to allocate a temporary command buffer
+	vk::CommandBufferAllocateInfo allocateInfo(
+		pool,
+		vk::CommandBufferLevel::ePrimary,
+		1
+	);
+
+	vk::CommandBuffer commandBuffer;
+	device.allocateCommandBuffers(&allocateInfo, &commandBuffer);
+
+	// begin recording command buffer
+	// we're only going to use the buffer once and wait with returning from the function or until the copy has finished
+	// we'll inform the driver about our intent with OneTimeSubmit
+	commandBuffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+
+	return commandBuffer;
+}
+
+void VulkanUtils::endSingleTimeCommands(vk::CommandBuffer commandBuffer, vk::Device device, vk::CommandPool pool, vk::Queue queue)
+{
+	// end command recording
+	commandBuffer.end();
+
+	// submit the commands for execution and wait
+	vk::SubmitInfo submitInfo;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+	queue.submit(1, &submitInfo, nullptr);
+	queue.waitIdle();
+
+	// free the temporary command buffer
+	device.freeCommandBuffers(pool, 1, &commandBuffer);
+}
+
+void VulkanUtils::transitionImageLayout(vk::Device device, vk::CommandPool pool, vk::Queue queue, vk::Image image, vk::Format format, vk::ImageLayout oldLayout,
+	vk::ImageLayout newLayout)
+{
+	// begin recording commands
+	vk::CommandBuffer commandBuffer = beginSingleTimeCommands(device, pool);
+
+	// we'll use an image barrier to perform the layout transition
+	// used to synchronize access to resources, (e.g. ensuring a write completes before reading),
+	// but it can also be used to transition image layouts and transfer queue family ownership
+	// - accessMasks ...
+	// - oldLayout and newLayout should match our requested transition
+	// - queue family indices would be specified here if we wanted to transfer queue family ownership
+	// - the subresource range specifies which subresources are affected, but since our image is not an array and does not have mipmapping,
+	//		only one level and layer are specified
+	vk::ImageMemoryBarrier barrier(
+		{},
+		{},
+		oldLayout,
+		newLayout, 
+		VK_QUEUE_FAMILY_IGNORED,
+		VK_QUEUE_FAMILY_IGNORED,
+		image, 
+		vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)
+	);
+
+	// set access mask and pipeline stages based on the layout in the transition
+	// - undefined->transfer destination, don't need to wait
+	// - transfer destination->shader, shader reads should wait on transfer writes
+	vk::PipelineStageFlags sourceStage;
+	vk::PipelineStageFlags destinationStage;
+
+	// note: if the transition is not defined here it will result in an error
+	if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
+		barrier.srcAccessMask = {};
+		barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+		destinationStage = vk::PipelineStageFlagBits::eTransfer;
+	}
+	else if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+		sourceStage = vk::PipelineStageFlagBits::eTransfer;
+		destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+	}
+	else {
+		throw std::invalid_argument("unsupported layout transition!");
+	}
+
+	// run the barrier
+	commandBuffer.pipelineBarrier(
+		sourceStage,
+		destinationStage, 
+		vk::DependencyFlags(),
+		0,
+		nullptr, 
+		0,
+		nullptr,
+		1,
+		&barrier
+	);
+
+	// end command recording
+	endSingleTimeCommands(commandBuffer, device, pool, queue);
 }
