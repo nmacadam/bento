@@ -505,14 +505,25 @@ void Renderer::createDescriptorSetLayout()
 	// transferring frame-updated information to the gpu can be slow if not done correctly
 	// we'll be using a resource descriptor; its how we will access our uniform buffer object
 
-	// describe layout binding (use for uniform buffer)
+	// describe layout binding for uniform buffer
 	vk::DescriptorSetLayoutBinding uboLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1);
 	uboLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
 	uboLayoutBinding.pImmutableSamplers = nullptr;
 
+	// describe layout binding for sampler
+	vk::DescriptorSetLayoutBinding samplerLayoutBinding(
+		1,
+		vk::DescriptorType::eCombinedImageSampler,
+		1,
+		vk::ShaderStageFlagBits::eFragment,
+		nullptr
+	);
+
+	std::array<vk::DescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
+
 	// create descriptor set for ubo
-	vk::DescriptorSetLayoutCreateInfo uboLayoutCreateInfo({}, 1, &uboLayoutBinding);
-	descriptorSetLayout = device->createDescriptorSetLayoutUnique(uboLayoutCreateInfo);
+	vk::DescriptorSetLayoutCreateInfo layoutInfo({}, bindings.size(), bindings.data());
+	descriptorSetLayout = device->createDescriptorSetLayoutUnique(layoutInfo);
 
 	std::cout << "[INFO] : " << "Created descriptor set layout" << std::endl;
 }
@@ -923,10 +934,16 @@ void Renderer::createUniformBuffers()
 
 void Renderer::createDescriptorPool()
 {
-	vk::DescriptorPoolSize poolSize(vk::DescriptorType::eUniformBuffer, swapChainImages.size());
-	vk::DescriptorPoolCreateInfo poolInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, swapChainImages.size(), 1, &poolSize);
+	// set pool sizes for each descriptor
+	std::array<vk::DescriptorPoolSize, 2> poolSizes = {
+		vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, swapChainImages.size()),
+		vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, swapChainImages.size())
+	};
+	vk::DescriptorPoolCreateInfo poolInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, swapChainImages.size(), 1, poolSizes.data());
 
 	descriptorPool = device->createDescriptorPoolUnique(poolInfo);
+
+	std::cout << "[INFO] : " << "Created descriptor pool" << std::endl;
 }
 
 void Renderer::createDescriptorSets()
@@ -941,17 +958,35 @@ void Renderer::createDescriptorSets()
 	// populate descriptors
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
 		vk::DescriptorBufferInfo bufferInfo(uniformBufferData[i].buffer.get(), 0, sizeof(UniformBufferObject));
-		vk::WriteDescriptorSet descriptorWrite(
-			descriptorSets[i].get(),
-			0, 
-			0, 1, 
-			vk::DescriptorType::eUniformBuffer, 
-			nullptr, 
-			&bufferInfo, 
-			nullptr
-		);
-		device->updateDescriptorSets(1, &descriptorWrite, 0, nullptr);
+		vk::DescriptorImageInfo imageInfo(textureSampler.get(), textureImageView.get(), vk::ImageLayout::eShaderReadOnlyOptimal);
+
+		std::array<vk::WriteDescriptorSet, 2> descriptorWrites = {
+			vk::WriteDescriptorSet(
+				descriptorSets[i].get(),
+				0,
+				0, 
+				1,
+				vk::DescriptorType::eUniformBuffer,
+				nullptr,
+				&bufferInfo,
+				nullptr
+			),
+			vk::WriteDescriptorSet(
+				descriptorSets[i].get(),
+				1,
+				0, 
+				1,
+				vk::DescriptorType::eCombinedImageSampler,
+				&imageInfo,
+				nullptr,
+				nullptr
+			)
+		};
+
+		device->updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 	}
+
+	std::cout << "[INFO] : " << "Created descriptor set" << std::endl;
 }
 
 void Renderer::createCommandBuffers()

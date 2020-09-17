@@ -5,6 +5,7 @@
 struct Vertex {
 	glm::vec2 pos;
 	glm::vec3 color;
+	glm::vec2 texCoord;
 
 	// describes vertex data layout
 	static vk::VertexInputBindingDescription getBindingDescription() {
@@ -13,11 +14,12 @@ struct Vertex {
 	}
 
 	// describe individual data layout
-	static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions() {
+	static std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions() {
 		const vk::VertexInputAttributeDescription position(0, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, pos));
 		const vk::VertexInputAttributeDescription color(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color));
+		const vk::VertexInputAttributeDescription texCoord(2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord));
 
-		const std::array<vk::VertexInputAttributeDescription, 2> attributeDescriptions = { position , color };
+		const std::array<vk::VertexInputAttributeDescription, 3> attributeDescriptions = { position , color, texCoord };
 
 		return attributeDescriptions;
 	}
