@@ -4,6 +4,12 @@
 #include <set>
 #include <algorithm>
 #include "Shader.h"
+#include "UniformBufferObject.h"
+#include <chrono>
+
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 //static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
 //	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
@@ -54,6 +60,8 @@ void Renderer::drawFrame()
 	}
 	// Mark the image as now being in use by this frame
 	imagesInFlight[imageIndex] = inFlightFences[currentFrame].get();
+
+	updateUniformBuffer(imageIndex);
 
 	// gather requirements for submit info
 	std::array<vk::Semaphore, 1> waitSemaphores = { imageAvailableSemaphores[currentFrame].get() };
@@ -127,11 +135,15 @@ void Renderer::initalizeVulkan()
 	createSwapChain();
 	createImageViews();
 	createRenderPass();
+	createDescriptorSetLayout();
 	createGraphicsPipeline();
 	createFramebuffers();
 	createCommandPool();
 	createVertexBuffer();
 	createIndexBuffer();
+	createUniformBuffers();
+	createDescriptorPool();
+	createDescriptorSets();
 	createCommandBuffers();
 	createSyncObjects();
 
@@ -156,11 +168,19 @@ void Renderer::cleanupSwapChain()
 	device->destroyRenderPass(renderPass.release());
 
 	for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-		device->destroyImageView(swapChainImageViews[i].release(), nullptr);
+		device->destroyImageView(swapChainImageViews[i].release(), nullptr);\
 	}
 	swapChainImageViews.clear();
 
 	device->destroySwapchainKHR(swapChain.release());
+
+	for (size_t i = 0; i < swapChainImages.size(); i++) {
+		device->destroyBuffer(uniformBufferData[i].buffer.release());
+		device->freeMemory(uniformBufferData[i].memory.release());
+	}
+	uniformBufferData.clear();
+
+	device->destroyDescriptorPool(descriptorPool.release());
 }
 
 void Renderer::recreateSwapChain()
@@ -183,6 +203,9 @@ void Renderer::recreateSwapChain()
 	createRenderPass();
 	createGraphicsPipeline();
 	createFramebuffers();
+	createUniformBuffers();
+	createDescriptorPool();
+	createDescriptorSets();
 	createCommandBuffers();
 }
 
@@ -483,6 +506,23 @@ void Renderer::createRenderPass()
 	std::cout << "[INFO] : " << "Created render pass" << std::endl;
 }
 
+void Renderer::createDescriptorSetLayout()
+{
+	// transferring frame-updated information to the gpu can be slow if not done correctly
+	// we'll be using a resource descriptor; its how we will access our uniform buffer object
+
+	// describe layout binding (use for uniform buffer)
+	vk::DescriptorSetLayoutBinding uboLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1);
+	uboLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
+	uboLayoutBinding.pImmutableSamplers = nullptr;
+
+	// create descriptor set for ubo
+	vk::DescriptorSetLayoutCreateInfo uboLayoutCreateInfo({}, 1, &uboLayoutBinding);
+	descriptorSetLayout = device->createDescriptorSetLayoutUnique(uboLayoutCreateInfo);
+
+	std::cout << "[INFO] : " << "Created descriptor set layout" << std::endl;
+}
+
 void Renderer::createGraphicsPipeline()
 {
 	// we now need to set up and configure a graphics pipeline for drawing an image
@@ -559,7 +599,7 @@ void Renderer::createGraphicsPipeline()
 		false,
 		vk::PolygonMode::eFill,
 		vk::CullModeFlagBits::eBack,
-		vk::FrontFace::eClockwise,
+		vk::FrontFace::eCounterClockwise,
 		false,
 		0.0f,
 		0.0f,
@@ -608,10 +648,10 @@ void Renderer::createGraphicsPipeline()
 	// https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions
 
 	// create the graphics pipeline layout
-	vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
+	vk::PipelineLayoutCreateInfo pipelineLayoutInfo(	// check here later
 		{},
-		0,
-		nullptr,
+		1,
+		&descriptorSetLayout.get(),
 		0,
 		nullptr
 	);
@@ -756,6 +796,57 @@ void Renderer::createIndexBuffer()
 	std::cout << "[INFO] : " << "Created index buffer" << std::endl;
 }
 
+void Renderer::createUniformBuffers()
+{
+	vk::DeviceSize bufferSize = sizeof(UniformBufferObject);
+	uniformBufferData.resize(swapChainImages.size());
+
+	for (size_t i = 0; i < swapChainImages.size(); i++) {
+		uniformBufferData[i] = VulkanUtils::createBuffer(
+			device.get(),
+			bufferSize,
+			physicalDevice,
+			vk::BufferUsageFlagBits::eUniformBuffer,
+			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+		);
+	}
+
+	std::cout << "[INFO] : " << "Created uniform buffers" << std::endl;
+}
+
+void Renderer::createDescriptorPool()
+{
+	vk::DescriptorPoolSize poolSize(vk::DescriptorType::eUniformBuffer, swapChainImages.size());
+	vk::DescriptorPoolCreateInfo poolInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, swapChainImages.size(), 1, &poolSize);
+
+	descriptorPool = device->createDescriptorPoolUnique(poolInfo);
+}
+
+void Renderer::createDescriptorSets()
+{
+	std::vector<vk::DescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout.get());
+
+	vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool.get(), swapChainImages.size(), layouts.data());
+
+	descriptorSets.resize(swapChainImages.size());
+	descriptorSets = device->allocateDescriptorSetsUnique(allocateInfo);
+
+	// populate descriptors
+	for (size_t i = 0; i < swapChainImages.size(); i++) {
+		vk::DescriptorBufferInfo bufferInfo(uniformBufferData[i].buffer.get(), 0, sizeof(UniformBufferObject));
+		vk::WriteDescriptorSet descriptorWrite(
+			descriptorSets[i].get(),
+			0, 
+			0, 1, 
+			vk::DescriptorType::eUniformBuffer, 
+			nullptr, 
+			&bufferInfo, 
+			nullptr
+		);
+		device->updateDescriptorSets(1, &descriptorWrite, 0, nullptr);
+	}
+}
+
 void Renderer::createCommandBuffers()
 {
 	commandBuffers.resize(swapChainFramebuffers.size());
@@ -800,6 +891,9 @@ void Renderer::createCommandBuffers()
 		commandBuffers[i]->bindVertexBuffers(0, vertexBuffers, offsets);
 		commandBuffers[i]->bindIndexBuffer(indexBufferData.buffer.get(), 0, vk::IndexType::eUint32);
 
+		// bind descriptor sets
+		commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, descriptorSets[i].get(), nullptr);
+
 		// draw
 		commandBuffers[i]->drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
@@ -829,6 +923,24 @@ void Renderer::createSyncObjects()
 	}
 
 	std::cout << "[INFO] : " << "Created sync objects" << std::endl;
+}
+
+void Renderer::updateUniformBuffer(uint32_t currentImage)
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	UniformBufferObject ubo{};
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
+	ubo.proj[1][1] *= -1;
+
+	void* data = device->mapMemory(uniformBufferData[currentImage].memory.get(), 0, sizeof(ubo), {});
+	memcpy(data, &ubo, sizeof(ubo));
+	device->unmapMemory(uniformBufferData[currentImage].memory.get());
 }
 
 std::vector<const char*> Renderer::getRequiredExtensions()

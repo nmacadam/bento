@@ -56,11 +56,13 @@ private:
 	std::vector<vk::UniqueImageView> swapChainImageViews;
 	std::vector<vk::UniqueFramebuffer> swapChainFramebuffers;
 
-	//vk::UniqueDescriptorSetLayout descriptorSetLayout;
-
 	vk::UniqueRenderPass renderPass;
 	vk::UniquePipelineLayout pipelineLayout;
+	vk::UniqueDescriptorSetLayout descriptorSetLayout;
 	vk::UniquePipeline graphicsPipeline;
+
+	vk::UniqueDescriptorPool descriptorPool;
+	std::vector<vk::UniqueDescriptorSet> descriptorSets;
 
 	vk::UniqueCommandPool commandPool;
 	std::vector<vk::UniqueCommandBuffer> commandBuffers;
@@ -73,7 +75,7 @@ private:
 	BufferData vertexBufferData;
 	BufferData indexBufferData;
 
-	//std::vector<BufferData> uniformBufferData;
+	std::vector<BufferData> uniformBufferData;
 
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 	size_t currentFrame = 0;
@@ -109,17 +111,19 @@ private:
 	void createSwapChain();
 	void createImageViews();
 	void createRenderPass();
-	//void createDescriptorSetLayout();
+	void createDescriptorSetLayout();
 	void createGraphicsPipeline();
 	void createFramebuffers();
 	void createCommandPool();
 	void createVertexBuffer();
 	void createIndexBuffer();
-	//void createUniformBuffers();
+	void createUniformBuffers();
+	void createDescriptorPool();
+	void createDescriptorSets();
 	void createCommandBuffers();
 	void createSyncObjects();
 
-	//void updateUniformBuffer(uint32_t currentImage);
+	void updateUniformBuffer(uint32_t currentImage);
 
 	std::vector<const char*> getRequiredExtensions();
 	bool checkValidationLayerSupport();
