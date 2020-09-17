@@ -9,6 +9,7 @@
 #include "Vertex.h"
 #include "BufferData.h"
 #include "ImageData.h"
+#include "Primitives.h"
 
 class Renderer
 {
@@ -26,15 +27,8 @@ public:
 	}
 
 private:
-	const std::vector<Vertex> vertices = {
-		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-	};
-	const std::vector<uint32_t> indices = {
-		0, 1, 2, 2, 3, 0
-	};
+	const std::vector<Vertex> vertices = Quad::vertices;
+	const std::vector<uint32_t> indices = Quad::indices;
 
 	Window* window;
 
@@ -85,6 +79,9 @@ private:
 	vk::UniqueImageView textureImageView;
 	vk::UniqueSampler textureSampler;
 
+	ImageData depthImage;
+	vk::UniqueImageView depthImageView;
+
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 	size_t currentFrame = 0;
 
@@ -124,6 +121,7 @@ private:
 	void createFramebuffers();
 	void createCommandPool();
 	// move this out
+	void createDepthResources();
 	void createTextureImage();
 	void createTextureImageView();
 	void createTextureSampler();

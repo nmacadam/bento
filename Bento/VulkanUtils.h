@@ -16,7 +16,7 @@ namespace VulkanUtils
 	ImageData createImage(vk::Device device, vk::PhysicalDevice physicalDevice, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling,
 		vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties);
 
-	vk::UniqueImageView createImageView(vk::Device device, vk::Image image, vk::Format format);
+	vk::UniqueImageView createImageView(vk::Device device, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags);
 
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
@@ -38,8 +38,12 @@ namespace VulkanUtils
 	SwapChainSupportDetails querySwapChainSupport(vk::PhysicalDevice device, vk::SurfaceKHR surface);
 
 	uint32_t findMemoryType(vk::PhysicalDeviceMemoryProperties const & memoryProperties, uint32_t typeFilter, vk::MemoryPropertyFlags requirementsMask);
+	vk::Format findDepthFormat(vk::PhysicalDevice physicalDevice);
+	vk::Format findSupportedFormat(vk::PhysicalDevice physicalDevice, const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
 
 	// misc.
+	bool hasStencilComponent(vk::Format format);
+
 	void copyBuffer(vk::Device device, vk::CommandPool pool, vk::Queue queue, vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 	void copyBufferToImage(vk::Device device, vk::CommandPool pool, vk::Queue queue, vk::Buffer srcBuffer, vk::Image dstImage, uint32_t width, uint32_t height);
 	bool checkLayers(std::vector<char const *> const & layers, std::vector<vk::LayerProperties> const & properties);

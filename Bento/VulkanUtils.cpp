@@ -94,13 +94,13 @@ ImageData VulkanUtils::createImage(vk::Device device, vk::PhysicalDevice physica
 	return data;
 }
 
-vk::UniqueImageView VulkanUtils::createImageView(vk::Device device, vk::Image image, vk::Format format)
+vk::UniqueImageView VulkanUtils::createImageView(vk::Device device, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags)
 {
 	// apply a standard component mapping (for swizzling)
 	const vk::ComponentMapping componentMapping(vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA);
 	// subresource range describes the image's purpose and which parts to access
 	// our image is a color target without mipmapping or multiple layers (for now)
-	const vk::ImageSubresourceRange subResourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+	const vk::ImageSubresourceRange subResourceRange(aspectFlags, 0, 1, 0, 1);
 
 	// create a new image view
 	const vk::ImageViewCreateInfo imageViewCreateInfo(
@@ -174,6 +174,41 @@ uint32_t VulkanUtils::findMemoryType(vk::PhysicalDeviceMemoryProperties const& m
 	}
 
 	throw std::runtime_error("failed to find suitable memory type!");
+}
+
+vk::Format VulkanUtils::findDepthFormat(vk::PhysicalDevice physicalDevice)
+{
+	return findSupportedFormat(
+		physicalDevice, 
+		{ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint },
+		vk::ImageTiling::eOptimal,
+		vk::FormatFeatureFlagBits::eDepthStencilAttachment
+	);
+}
+
+vk::Format VulkanUtils::findSupportedFormat(vk::PhysicalDevice physicalDevice, const std::vector<vk::Format>& candidates, vk::ImageTiling tiling,
+	vk::FormatFeatureFlags features)
+{
+	// go through the list of candidates from most to least desirable and find the first supported one
+	for (vk::Format format : candidates) {
+		vk::FormatProperties props;
+		physicalDevice.getFormatProperties(format, &props);
+
+		// check tiling parameters
+		if (tiling == vk::ImageTiling::eLinear && (props.linearTilingFeatures & features) == features) {
+			return format;
+		}
+		else if (tiling == vk::ImageTiling::eOptimal && (props.optimalTilingFeatures & features) == features) {
+			return format;
+		}
+
+		throw std::runtime_error("failed to find supported format!");
+	}
+}
+
+bool VulkanUtils::hasStencilComponent(vk::Format format)
+{
+	return format == vk::Format::eD32Sfloat || format == vk::Format::eD24UnormS8Uint;
 }
 
 void VulkanUtils::copyBuffer(vk::Device device, vk::CommandPool pool, vk::Queue queue, vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)

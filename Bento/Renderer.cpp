@@ -8,6 +8,7 @@
 #include <chrono>
 
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <stb_image.h>
@@ -138,8 +139,9 @@ void Renderer::initalizeVulkan()
 	createRenderPass();
 	createDescriptorSetLayout();
 	createGraphicsPipeline();
-	createFramebuffers();
 	createCommandPool();
+	createDepthResources();
+	createFramebuffers();
 	createTextureImage();
 	createTextureImageView();
 	createTextureSampler();
@@ -157,6 +159,10 @@ void Renderer::initalizeVulkan()
 void Renderer::cleanupSwapChain()
 {
 	// release unique pointers so each element can be recreated afterwards
+	device->destroyImageView(depthImageView.release());
+	device->destroyImage(depthImage.image.release());
+	device->freeMemory(depthImage.memory.release());
+
 	for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
 		device->destroyFramebuffer(swapChainFramebuffers[i].release());
 	}
@@ -206,6 +212,7 @@ void Renderer::recreateSwapChain()
 	createImageViews();
 	createRenderPass();
 	createGraphicsPipeline();
+	createDepthResources();
 	createFramebuffers();
 	createUniformBuffers();
 	createDescriptorPool();
@@ -435,7 +442,7 @@ void Renderer::createImageViews()
 	// create a new image view for each swap chain image
 	for (const auto swapChainImage : swapChainImages)
 	{
-		swapChainImageViews.push_back(VulkanUtils::createImageView(device.get(), swapChainImage, swapChainImageFormat));
+		swapChainImageViews.push_back(VulkanUtils::createImageView(device.get(), swapChainImage, swapChainImageFormat, vk::ImageAspectFlagBits::eColor));
 	}
 
 	std::cout << "[INFO] : " << "Created swap chain image views" << std::endl;
@@ -459,12 +466,28 @@ void Renderer::createRenderPass()
 		vk::ImageLayout::ePresentSrcKHR
 	);
 
+	// depth attachment for the image
+	vk::AttachmentDescription depthAttachment(
+		{},
+		VulkanUtils::findDepthFormat(physicalDevice),
+		vk::SampleCountFlagBits::e1,
+		vk::AttachmentLoadOp::eClear,
+		vk::AttachmentStoreOp::eDontCare,
+		vk::AttachmentLoadOp::eDontCare,
+		vk::AttachmentStoreOp::eDontCare,
+		vk::ImageLayout::eUndefined,
+		vk::ImageLayout::eDepthStencilAttachmentOptimal
+	);
+
 	// a single renderpass can consist of multiple subpasses
 	// subpasses are subsequent rendering operations that depend on the contents of framebuffers in previous passes (ex: post-processing a previous pass)
 	// by grouping these rendering operations into a a single pass, Vulkan is able to reorder the operations and conserve memory bandwidth
 
 	// a reference to the color attachment
 	vk::AttachmentReference colorAttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
+
+	// a reference to the depth attachment
+	vk::AttachmentReference depthAttachmentReference(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
 	// describe the subpass; where does it exist in the pipeline; what are its attachments
 	vk::SubpassDescription subpass(
@@ -475,6 +498,7 @@ void Renderer::createRenderPass()
 		1,
 		&colorAttachmentReference
 	);
+	subpass.pDepthStencilAttachment = &depthAttachmentReference;
 
 	// iffy about this one
 	// we need a subpass dependency to automatically take care of image layout transitions
@@ -488,12 +512,15 @@ void Renderer::createRenderPass()
 	);
 
 	// create render pass
+	std::array<vk::AttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
 	vk::RenderPassCreateInfo renderPassInfo(
 		{},
+		attachments.size(),
+		attachments.data(),
 		1,
-		&colorAttachment,
+		&subpass,
 		1,
-		&subpass
+		&dependency
 	);
 	renderPass = device->createRenderPassUnique(renderPassInfo);
 
@@ -603,7 +630,7 @@ void Renderer::createGraphicsPipeline()
 		false,
 		false,
 		vk::PolygonMode::eFill,
-		vk::CullModeFlagBits::eBack,
+		vk::CullModeFlagBits::eNone,
 		vk::FrontFace::eCounterClockwise,
 		false,
 		0.0f,
@@ -624,7 +651,22 @@ void Renderer::createGraphicsPipeline()
 		false
 	);
 
-	// depth and stencil testing goes here
+	// depth and stencil testing
+	// - depth comare op: specifies the comparison that is performed to keep or discard fragments
+	//		we're sticking to lower depth = closer
+	// - not using stencil for now
+	vk::PipelineDepthStencilStateCreateInfo depthStencil(
+		{},
+		true,
+		true,
+		vk::CompareOp::eLess,
+		false,
+		false,
+		{},
+		{},
+		0.0f,
+		1.0f
+	);
 
 	// describe color blend configuration per attached framebuffer
 	vk::PipelineColorBlendAttachmentState colorBlendAttachment(
@@ -672,7 +714,7 @@ void Renderer::createGraphicsPipeline()
 		&viewportState,								// pViewportState
 		&rasterizer,								// pRasterizationState
 		&multisampling,								// pMultisampleState
-		nullptr,					// pDepthStencilState
+		&depthStencil,								// pDepthStencilState
 		&colorBlending,								// pColorBlendState
 		nullptr,						// pDynamicState
 		pipelineLayout.get(),					// layout
@@ -690,23 +732,20 @@ void Renderer::createFramebuffers()
 	swapChainFramebuffers.reserve(swapChainImageViews.size());
 	for (auto const & view : swapChainImageViews)
 	{
-		std::array<vk::ImageView, 1> attachments = { view.get() };
+		// bundle image views for the framebuffer
+		std::array<vk::ImageView, 2> attachments = { view.get(), depthImageView.get() };
 
-		/*vk::ImageView attachments[] = {
-			view.get()
-		};*/
-
-		//attachments[0] = view.get();
-
-		swapChainFramebuffers.push_back(device->createFramebufferUnique(vk::FramebufferCreateInfo(vk::FramebufferCreateFlags(),
+		vk::FramebufferCreateInfo framebufferInfo(
+			vk::FramebufferCreateFlags(),
 			renderPass.get(),
-			attachments,
+			attachments.size(),
+			attachments.data(),
 			swapChainExtent.width,
 			swapChainExtent.height,
-			//surfaceData.extent.width,
-			//surfaceData.extent.height,
 			1
-		)));
+		);
+
+		swapChainFramebuffers.push_back(device->createFramebufferUnique(framebufferInfo));
 	}
 
 	std::cout << "[INFO] : " << "Created frame buffers" << std::endl;
@@ -721,6 +760,29 @@ void Renderer::createCommandPool()
 		vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlags(), queueFamilyIndices.graphicsFamily.value()));
 
 	std::cout << "[INFO] : " << "Created command pool" << std::endl;
+}
+
+void Renderer::createDepthResources()
+{
+	// get the depth image format
+	vk::Format depthFormat = VulkanUtils::findDepthFormat(physicalDevice);
+
+	// create the depth image
+	depthImage = VulkanUtils::createImage(
+		device.get(),
+		physicalDevice,
+		swapChainExtent.width,
+		swapChainExtent.height,
+		depthFormat,
+		vk::ImageTiling::eOptimal,
+		vk::ImageUsageFlagBits::eDepthStencilAttachment,
+		vk::MemoryPropertyFlagBits::eDeviceLocal
+	);
+
+	// create the depth image view
+	depthImageView = VulkanUtils::createImageView(device.get(), depthImage.image.get(), depthFormat, vk::ImageAspectFlagBits::eDepth);
+
+	std::cout << "[INFO] : " << "Created depth resources" << std::endl;
 }
 
 void Renderer::createTextureImage()
@@ -797,7 +859,7 @@ void Renderer::createTextureImage()
 
 void Renderer::createTextureImageView()
 {
-	textureImageView = VulkanUtils::createImageView(device.get(), textureImage.image.get(), vk::Format::eR8G8B8A8Srgb);
+	textureImageView = VulkanUtils::createImageView(device.get(), textureImage.image.get(), vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
 
 	std::cout << "[INFO] : " << "Created texture image view" << std::endl;
 }
@@ -1012,14 +1074,30 @@ void Renderer::createCommandBuffers()
 		commandBuffers[i]->begin(beginInfo);
 
 		// configure render pass; include the pass itself and the attachments to bind
-		vk::RenderPassBeginInfo renderPassInfo(renderPass.get(), swapChainFramebuffers[i].get());
-		renderPassInfo.renderArea.offset = vk::Offset2D(0, 0);
-		renderPassInfo.renderArea.extent = swapChainExtent;
+		//renderPassInfo.renderArea.offset = vk::Offset2D(0, 0);
+		//renderPassInfo.renderArea.extent = swapChainExtent;
 
-		vk::ClearValue clearValue(vk::ClearColorValue(std::array<uint32_t, 4>{0, 0, 0, 1}));
+		// include clear values for the color and depth image
+		std::array<vk::ClearValue, 2> clearValues = {
+			vk::ClearValue(vk::ClearColorValue(std::array<uint32_t, 4>{0, 0, 0, 1})),
+			vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0))
+		};
 
-		renderPassInfo.clearValueCount = 1;
-		renderPassInfo.pClearValues = &clearValue;
+		//renderPassInfo.clearValueCount = clearValues.size();
+		//renderPassInfo.pClearValues = clearValues.data();
+
+		if (swapChainFramebuffers[i].get() == nullptr)
+		{
+			std::cerr << "framebuffer is null!" << std::endl;
+		}
+
+		vk::RenderPassBeginInfo renderPassInfo(
+			renderPass.get(),
+			swapChainFramebuffers[i].get(), 
+			vk::Rect2D(vk::Offset2D(0,0), swapChainExtent), 
+			clearValues.size(),
+			clearValues.data()
+		);
 
 		// begin the render pass
 		commandBuffers[i]->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
@@ -1075,9 +1153,10 @@ void Renderer::updateUniformBuffer(uint32_t currentImage)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	//ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -0.5f, 0.0f));
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.5f, 0.0f, 1.0f));
 	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
+	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / static_cast<float>(swapChainExtent.height), 0.1f, 10.0f);
 	ubo.proj[1][1] *= -1;
 
 	void* data = device->mapMemory(uniformBufferData[currentImage].memory.get(), 0, sizeof(ubo), {});

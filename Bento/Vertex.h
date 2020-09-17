@@ -3,7 +3,7 @@
 #include <glm/vec2.hpp>
 
 struct Vertex {
-	glm::vec2 pos;
+	glm::vec3 pos;
 	glm::vec3 color;
 	glm::vec2 texCoord;
 
@@ -15,7 +15,7 @@ struct Vertex {
 
 	// describe individual data layout
 	static std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions() {
-		const vk::VertexInputAttributeDescription position(0, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, pos));
+		const vk::VertexInputAttributeDescription position(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos));
 		const vk::VertexInputAttributeDescription color(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color));
 		const vk::VertexInputAttributeDescription texCoord(2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord));
 

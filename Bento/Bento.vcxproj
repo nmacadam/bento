@@ -175,6 +175,7 @@
     <ClInclude Include="BufferData.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="ImageData.h" />
+    <ClInclude Include="Primitives.h" />
     <ClInclude Include="QueueFamilyIndices.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Shader.h" />
