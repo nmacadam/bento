@@ -10,6 +10,9 @@
 #include "BufferData.h"
 #include "ImageData.h"
 #include "Primitives.h"
+#include "VulkanContext.h"
+#include "Mesh.h"
+
 
 class Renderer
 {
@@ -26,9 +29,14 @@ public:
 		app->framebufferResized = true;
 	}
 
+	VulkanContext context;
+
+	MeshFactory meshFactory = MeshFactory(&context);
+	void rebuildCommandBuffers();
+
 private:
-	const std::vector<Vertex> vertices = Quad::vertices;
-	const std::vector<uint32_t> indices = Quad::indices;
+	const std::vector<Vertex> vertices = Cube::vertices;
+	const std::vector<uint32_t> indices = Cube::indices;
 
 	Window* window;
 
@@ -133,6 +141,8 @@ private:
 	void createDescriptorSets();
 	void createCommandBuffers();
 	void createSyncObjects();
+
+
 
 	void updateUniformBuffer(uint32_t currentImage);
 

@@ -32,6 +32,20 @@ void Renderer::initialize(Window *window)
 {
 	this->window = window;
 	initalizeVulkan();
+
+	//VulkanContext vc = { &instance.get(), &surface.get(), &device.get(), &physicalDevice, &commandPool.get(), &graphicsQueue }
+
+	context = VulkanContext{
+		instance.get(),
+		surface.get(),
+		device.get(),
+		physicalDevice,
+		commandPool.get(),
+		descriptorPool.get(),
+		descriptorSetLayout.get(),
+		graphicsQueue,
+		static_cast<int>(swapChainImages.size())
+	};
 }
 
 void Renderer::drawFrame()
@@ -121,6 +135,8 @@ void Renderer::clean()
 	device->waitIdle();
 
 	// Unique references will automatically be deallocated
+
+	meshFactory.clean();
 
 	VulkanUtils::DestroyDebugUtilsMessengerEXT(instance->operator VkInstance_T*(), debugMessenger, nullptr);
 }
@@ -1105,6 +1121,21 @@ void Renderer::createCommandBuffers()
 		// bind the graphics pipeline
 		commandBuffers[i]->bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline.get());
 
+		//for (size_t j = 0; j < meshFactory.count(); j++)
+		//{
+		//	std::cout << "adding mesh" << std::endl;
+
+		//	// bind vertex buffers
+		//	commandBuffers[i]->bindVertexBuffers(0, meshFactory.getMesh(j)->getVertexBufferData(), { 0 });
+		//	commandBuffers[i]->bindIndexBuffer(meshFactory.getMesh(j)->getIndexBufferData(), 0, vk::IndexType::eUint32);
+
+		//	// bind descriptor sets
+		//	commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, descriptorSets[i].get(), nullptr);
+
+		//	// draw
+		//	commandBuffers[i]->drawIndexed(static_cast<uint32_t>(meshFactory.getMesh(j)->indices.size()), 1, 0, 0, 0);
+		//}
+
 		// bind vertex buffers
 		std::array<vk::Buffer, 1> vertexBuffers = { vertexBufferData.buffer.get() };
 		std::array<vk::DeviceSize, 1> offsets = { 0 };
@@ -1143,6 +1174,87 @@ void Renderer::createSyncObjects()
 	}
 
 	std::cout << "[INFO] : " << "Created sync objects" << std::endl;
+}
+
+void Renderer::rebuildCommandBuffers()
+{
+	// start recording commands for each command buffer
+	for (size_t i = 0; i < commandBuffers.size(); i++) {
+		// none of the begin info flags are applicable for us right now
+		vk::CommandBufferBeginInfo beginInfo(
+			{},
+			nullptr
+		);
+
+		commandBuffers[i]->begin(beginInfo);
+
+		// configure render pass; include the pass itself and the attachments to bind
+		//renderPassInfo.renderArea.offset = vk::Offset2D(0, 0);
+		//renderPassInfo.renderArea.extent = swapChainExtent;
+
+		// include clear values for the color and depth image
+		std::array<vk::ClearValue, 2> clearValues = {
+			vk::ClearValue(vk::ClearColorValue(std::array<uint32_t, 4>{0, 0, 0, 1})),
+			vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0))
+		};
+
+		//renderPassInfo.clearValueCount = clearValues.size();
+		//renderPassInfo.pClearValues = clearValues.data();
+
+		if (swapChainFramebuffers[i].get() == nullptr)
+		{
+			std::cerr << "framebuffer is null!" << std::endl;
+		}
+
+		vk::RenderPassBeginInfo renderPassInfo(
+			renderPass.get(),
+			swapChainFramebuffers[i].get(),
+			vk::Rect2D(vk::Offset2D(0, 0), swapChainExtent),
+			clearValues.size(),
+			clearValues.data()
+		);
+
+		// begin the render pass
+		commandBuffers[i]->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+
+		// bind the graphics pipeline
+		commandBuffers[i]->bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline.get());
+
+		for (size_t j = 0; j < meshFactory.count(); j++)
+		{
+			std::cout << "adding mesh" << std::endl;
+
+			// bind vertex buffers
+			commandBuffers[i]->bindVertexBuffers(0, meshFactory.getMesh(j)->getVertexBufferData(), { 0 });
+			commandBuffers[i]->bindIndexBuffer(meshFactory.getMesh(j)->getIndexBufferData(), 0, vk::IndexType::eUint32);
+
+			// bind descriptor sets
+			commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, descriptorSets[i].get(), nullptr);
+
+			// draw
+			commandBuffers[i]->drawIndexed(static_cast<uint32_t>(meshFactory.getMesh(j)->indices.size()), 1, 0, 0, 0);
+		}
+
+		//// bind vertex buffers
+		//std::array<vk::Buffer, 1> vertexBuffers = { vertexBufferData.buffer.get() };
+		//std::array<vk::DeviceSize, 1> offsets = { 0 };
+		//commandBuffers[i]->bindVertexBuffers(0, vertexBuffers, offsets);
+		//commandBuffers[i]->bindIndexBuffer(indexBufferData.buffer.get(), 0, vk::IndexType::eUint32);
+
+		//// bind descriptor sets
+		//commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, descriptorSets[i].get(), nullptr);
+
+		//// draw
+		//commandBuffers[i]->drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+
+		// end the render pass
+		commandBuffers[i]->endRenderPass();
+
+		// finish recording
+		commandBuffers[i]->end();
+	}
+
+	std::cout << "[INFO] : " << "Rebuilt command buffers" << std::endl;
 }
 
 void Renderer::updateUniformBuffer(uint32_t currentImage)
