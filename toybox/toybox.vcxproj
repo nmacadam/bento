@@ -18,51 +18,34 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="bento\core\application.h" />
-    <ClInclude Include="bento.h" />
-    <ClInclude Include="bento\core\core.h" />
-    <ClInclude Include="bento\core\entryPoint.h" />
-    <ClInclude Include="bento\core\window.h" />
-    <ClInclude Include="bento\core\log.h" />
-    <ClInclude Include="bento\core\state.h" />
-    <ClInclude Include="bento\core\stateStack.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="bento\core\application.cpp" />
-    <ClCompile Include="bento\core\window.cpp" />
-    <ClCompile Include="bento\core\log.cpp" />
-    <ClCompile Include="bento\core\state.cpp" />
-    <ClCompile Include="bento\core\stateStack.cpp" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{9D7D3600-4FF1-4936-822A-EA23548FAEC9}</ProjectGuid>
-    <RootNamespace>bento</RootNamespace>
+    <ProjectGuid>{20726D39-69C7-45A4-A814-9F5929DC1BF2}</ProjectGuid>
+    <RootNamespace>toybox</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -108,14 +91,13 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Dev\static lib test\bento\bento;E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\spdlog\include;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Lib>
-      <AdditionalLibraryDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Lib32;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\lib-vc2017;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Lib>
+    <Link>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -123,14 +105,12 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Dev\static lib test\bento\bento;E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\spdlog\include;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Lib>
-      <AdditionalLibraryDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Lib;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\lib-vc2017;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Lib>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -140,18 +120,15 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Dev\static lib test\bento\bento;E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\spdlog\include;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <Lib>
-      <AdditionalLibraryDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Lib32;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\lib-vc2017;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -161,19 +138,23 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Dev\static lib test\bento\bento;E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\spdlog\include;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <Lib>
-      <AdditionalLibraryDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Lib;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\lib-vc2017;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Lib>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\bento\bento.vcxproj">
+      <Project>{9d7d3600-4ff1-4936-822a-ea23548faec9}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\toybox.cpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
