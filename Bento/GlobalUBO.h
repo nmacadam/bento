@@ -9,8 +9,8 @@
 // -A mat4 matrix must have the same alignment as a vec4.
 // full list: https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/chap14.html#interfaces-resources-layout
 
-struct UniformBufferObject {
-	alignas(16) glm::mat4 model;
+struct GlobalUBO {
+	//alignas(16) glm::mat4 model;
 	alignas(16) glm::mat4 view;
 	alignas(16) glm::mat4 proj;
 };

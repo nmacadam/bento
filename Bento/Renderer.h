@@ -10,6 +10,9 @@
 #include "BufferData.h"
 #include "ImageData.h"
 #include "Primitives.h"
+#include "VulkanContext.h"
+#include "Mesh.h"
+
 
 class Renderer
 {
@@ -26,9 +29,14 @@ public:
 		app->framebufferResized = true;
 	}
 
+	VulkanContext context;
+
+	MeshFactory meshFactory = MeshFactory(&context);
+	void rebuildCommandBuffers();
+
 private:
-	const std::vector<Vertex> vertices = Quad::vertices;
-	const std::vector<uint32_t> indices = Quad::indices;
+	const std::vector<Vertex> vertices = Cube::vertices;
+	const std::vector<uint32_t> indices = Cube::indices;
 
 	Window* window;
 
@@ -53,11 +61,15 @@ private:
 
 	vk::UniqueRenderPass renderPass;
 	vk::UniquePipelineLayout pipelineLayout;
-	vk::UniqueDescriptorSetLayout descriptorSetLayout;
 	vk::UniquePipeline graphicsPipeline;
 
+	vk::UniqueDescriptorSetLayout descriptorSetLayout;
 	vk::UniqueDescriptorPool descriptorPool;
 	std::vector<vk::UniqueDescriptorSet> descriptorSets;
+
+	vk::UniqueDescriptorSetLayout objectDescriptorSetLayout;
+	vk::UniqueDescriptorPool objectDescriptorPool;
+	std::vector<vk::UniqueDescriptorSet> objectDescriptorSets;
 
 	vk::UniqueCommandPool commandPool;
 	std::vector<vk::UniqueCommandBuffer> commandBuffers;
@@ -71,6 +83,7 @@ private:
 	BufferData indexBufferData;
 
 	std::vector<BufferData> uniformBufferData;
+	std::vector<BufferData> transformationBufferData;
 
 	BufferData stagingBuffer;
 
@@ -117,6 +130,7 @@ private:
 	void createImageViews();
 	void createRenderPass();
 	void createDescriptorSetLayout();
+	void createObjectDescriptorSetLayout();
 	void createGraphicsPipeline();
 	void createFramebuffers();
 	void createCommandPool();
@@ -130,9 +144,13 @@ private:
 	void createIndexBuffer();
 	void createUniformBuffers();
 	void createDescriptorPool();
+	void createObjectDescriptorPool();
 	void createDescriptorSets();
+	void createObjectDescriptorSets();
 	void createCommandBuffers();
 	void createSyncObjects();
+
+
 
 	void updateUniformBuffer(uint32_t currentImage);
 
