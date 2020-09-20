@@ -13,5 +13,9 @@ struct VulkanContext
 	vk::DescriptorSetLayout descriptorSetLayout;
 	vk::Queue queue;
 
+	vk::Extent2D swapChainExtent;
 	int swapChainImageCount;
+
+	vk::Sampler sampler;
+	vk::ImageView imageView;
 };

@@ -61,11 +61,15 @@ private:
 
 	vk::UniqueRenderPass renderPass;
 	vk::UniquePipelineLayout pipelineLayout;
-	vk::UniqueDescriptorSetLayout descriptorSetLayout;
 	vk::UniquePipeline graphicsPipeline;
 
+	vk::UniqueDescriptorSetLayout descriptorSetLayout;
 	vk::UniqueDescriptorPool descriptorPool;
 	std::vector<vk::UniqueDescriptorSet> descriptorSets;
+
+	vk::UniqueDescriptorSetLayout objectDescriptorSetLayout;
+	vk::UniqueDescriptorPool objectDescriptorPool;
+	std::vector<vk::UniqueDescriptorSet> objectDescriptorSets;
 
 	vk::UniqueCommandPool commandPool;
 	std::vector<vk::UniqueCommandBuffer> commandBuffers;
@@ -79,6 +83,7 @@ private:
 	BufferData indexBufferData;
 
 	std::vector<BufferData> uniformBufferData;
+	std::vector<BufferData> transformationBufferData;
 
 	BufferData stagingBuffer;
 
@@ -125,6 +130,7 @@ private:
 	void createImageViews();
 	void createRenderPass();
 	void createDescriptorSetLayout();
+	void createObjectDescriptorSetLayout();
 	void createGraphicsPipeline();
 	void createFramebuffers();
 	void createCommandPool();
@@ -138,7 +144,9 @@ private:
 	void createIndexBuffer();
 	void createUniformBuffers();
 	void createDescriptorPool();
+	void createObjectDescriptorPool();
 	void createDescriptorSets();
+	void createObjectDescriptorSets();
 	void createCommandBuffers();
 	void createSyncObjects();
 

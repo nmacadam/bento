@@ -3,6 +3,7 @@
 #include "Vertex.h"
 #include "BufferData.h"
 #include "VulkanContext.h"
+#include <iostream>
 
 struct VulkanContext;
 class Mesh;
@@ -17,20 +18,33 @@ public:
 	Mesh(MeshFactory& manager, VulkanContext* context, std::vector<Vertex> vertices, std::vector<uint32_t> indices) : vertices(vertices), indices(indices), manager(manager)
 	{
 		setupMesh(context);
+		setrandoms();
+	}
+
+	void setrandoms()
+	{
+		float random = -1.f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1.f - (-1.f))));
+
+		std::cout << "Random is " << random << std::endl;
 	}
 
 	vk::Buffer getVertexBufferData() { return vertexBufferData.buffer.get(); }
 	vk::Buffer getIndexBufferData() { return indexBufferData.buffer.get(); }
+	vk::DescriptorSet getDescriptorSet(int frame) { return descriptorSets[frame].get(); }
 	//vk::Buffer getIndexBufferData() { return &indexBufferData; }
 
-	void updateUniformBuffer(uint32_t currentImage);
+	void updateUniformBuffer(VulkanContext* context, uint32_t currentImage);
 
 private:
+	float xpos = 0.f;
+	float random;
+
 	MeshFactory& manager;
 
 	BufferData vertexBufferData;
 	BufferData indexBufferData;
 	std::vector<BufferData> uniformBufferData;
+	std::vector<BufferData> transformationBufferData;
 
 	std::vector<vk::UniqueDescriptorSet> descriptorSets;
 

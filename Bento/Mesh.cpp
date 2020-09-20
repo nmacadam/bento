@@ -4,7 +4,11 @@
 #include <vulkan/vulkan.hpp>
 #include <iostream>
 #include "UniformBufferObject.h"
+#include <chrono>
 //#include "VulkanUtils.h"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 
 
@@ -26,11 +30,44 @@
 //	setupMesh();
 //}
 
+void Mesh::updateUniformBuffer(VulkanContext* context, uint32_t currentImage)
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	{
+		UniformBufferObject ubo{};
+		//ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -0.5f, 0.0f));
+		//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.5f, 0.0f, 1.0f));
+		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.proj = glm::perspective(glm::radians(45.0f), context->swapChainExtent.width / static_cast<float>(context->swapChainExtent.height), 0.1f, 10.0f);
+		ubo.proj[1][1] *= -1;
+
+		void* data = context->device.mapMemory(uniformBufferData[currentImage].memory.get(), 0, sizeof(ubo), {});
+		memcpy(data, &ubo, sizeof(ubo));
+		context->device.unmapMemory(uniformBufferData[currentImage].memory.get());
+	}
+
+	{
+		TransformationUBO ubo{};
+		//ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -0.5f, 0.0f));
+		//ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(xpos + random, 0.0f, 0.0f));
+		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.5f, 0.0f, 1.0f));
+
+		void* data = context->device.mapMemory(transformationBufferData[currentImage].memory.get(), 0, sizeof(ubo), {});
+		memcpy(data, &ubo, sizeof(ubo));
+		context->device.unmapMemory(transformationBufferData[currentImage].memory.get());
+	}
+}
+
 void Mesh::setupMesh(VulkanContext* context)
 {
 	createVertexBuffer(context);
 	createIndexBuffer(context);
 	createUniformBuffer(context);
+	createDescriptorSet(context);
 }
 
 void Mesh::createVertexBuffer(VulkanContext* context)
@@ -120,45 +157,69 @@ void Mesh::createUniformBuffer(VulkanContext* context)
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
 		);
 	}
+
+	vk::DeviceSize transformBufferSize = sizeof(TransformationUBO);
+	transformationBufferData.resize(context->swapChainImageCount);
+
+	for (size_t i = 0; i < context->swapChainImageCount; i++) {
+		transformationBufferData[i] = VulkanUtils::createBuffer(
+			context->device,
+			transformBufferSize,
+			context->physicalDevice,
+			vk::BufferUsageFlagBits::eUniformBuffer,
+			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+		);
+	}
 }
 
 void Mesh::createDescriptorSet(VulkanContext* context)
 {
-	//std::vector<vk::DescriptorSetLayout> layouts(context->swapChainImageCount, context->descriptorSetLayout);
+	std::vector<vk::DescriptorSetLayout> layouts(context->swapChainImageCount, context->descriptorSetLayout);
 
-	//vk::DescriptorSetAllocateInfo allocateInfo(context->descriptorPool, context->swapChainImageCount, layouts.data());
+	vk::DescriptorSetAllocateInfo allocateInfo(context->descriptorPool, context->swapChainImageCount, layouts.data());
 
-	//descriptorSets.resize(context->swapChainImageCount);
-	//descriptorSets = context->device.allocateDescriptorSetsUnique(allocateInfo);
+	descriptorSets.resize(context->swapChainImageCount);
+	descriptorSets = context->device.allocateDescriptorSetsUnique(allocateInfo);
 
-	//// populate descriptors
-	//for (size_t i = 0; i < context->swapChainImageCount; i++) {
-	//	vk::DescriptorBufferInfo bufferInfo(uniformBufferData[i].buffer.get(), 0, sizeof(UniformBufferObject));
-	//	vk::DescriptorImageInfo imageInfo(textureSampler.get(), textureImageView.get(), vk::ImageLayout::eShaderReadOnlyOptimal);
+	// populate descriptors
+	for (size_t i = 0; i < context->swapChainImageCount; i++) {
+		vk::DescriptorBufferInfo uniformBufferInfo(uniformBufferData[i].buffer.get(), 0, sizeof(UniformBufferObject));
+		vk::DescriptorBufferInfo modelMatInfo(transformationBufferData[i].buffer.get(), 0, sizeof(TransformationUBO));
+		vk::DescriptorImageInfo imageInfo(context->sampler, context->imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
 
-	//	std::array<vk::WriteDescriptorSet, 2> descriptorWrites = {
-	//		vk::WriteDescriptorSet(
-	//			descriptorSets[i].get(),
-	//			0,
-	//			0,
-	//			1,
-	//			vk::DescriptorType::eUniformBuffer,
-	//			nullptr,
-	//			&bufferInfo,
-	//			nullptr
-	//		),
-	//		vk::WriteDescriptorSet(
-	//			descriptorSets[i].get(),
-	//			1,
-	//			0,
-	//			1,
-	//			vk::DescriptorType::eCombinedImageSampler,
-	//			&imageInfo,
-	//			nullptr,
-	//			nullptr
-	//		)
-	//	};
+		std::array<vk::WriteDescriptorSet, 3> descriptorWrites = {
+			vk::WriteDescriptorSet(
+				descriptorSets[i].get(),
+				0,
+				0,
+				1,
+				vk::DescriptorType::eUniformBuffer,
+				nullptr,
+				&uniformBufferInfo,
+				nullptr
+			),
+			vk::WriteDescriptorSet(
+				descriptorSets[i].get(),
+				1,
+				0,
+				1,
+				vk::DescriptorType::eUniformBuffer,
+				nullptr,
+				&modelMatInfo,
+				nullptr
+			),
+			vk::WriteDescriptorSet(
+				descriptorSets[i].get(),
+				2,
+				0,
+				1,
+				vk::DescriptorType::eCombinedImageSampler,
+				&imageInfo,
+				nullptr,
+				nullptr
+			)
+		};
 
-	//	device->updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-	//}
+		context->device.updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+	}
 }
