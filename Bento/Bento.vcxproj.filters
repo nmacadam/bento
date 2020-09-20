@@ -85,9 +85,6 @@
     <ClInclude Include="src\allocator\bAllocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UniformBufferObject.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ImageData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -98,6 +95,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VulkanContext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalUBO.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectUBO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

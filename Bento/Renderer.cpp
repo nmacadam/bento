@@ -4,7 +4,8 @@
 #include <set>
 #include <algorithm>
 #include "Shader.h"
-#include "UniformBufferObject.h"
+#include "GlobalUBO.h"
+#include "ObjectUBO.h"
 #include <chrono>
 
 #define GLM_FORCE_RADIANS
@@ -41,8 +42,8 @@ void Renderer::initialize(Window *window)
 		device.get(),
 		physicalDevice,
 		commandPool.get(),
-		descriptorPool.get(),
-		descriptorSetLayout.get(),
+		objectDescriptorPool.get(),
+		objectDescriptorSetLayout.get(),
 		graphicsQueue,
 		swapChainExtent,
 		static_cast<int>(swapChainImages.size()),
@@ -823,7 +824,8 @@ void Renderer::createCommandPool()
 	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
 
 	commandPool = device->createCommandPoolUnique(
-		vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlags(), queueFamilyIndices.graphicsFamily.value()));
+		//vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlags(), queueFamilyIndices.graphicsFamily.value()));
+		vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, queueFamilyIndices.graphicsFamily.value()));
 
 	std::cout << "[INFO] : " << "Created command pool" << std::endl;
 }
@@ -1044,7 +1046,7 @@ void Renderer::createIndexBuffer()
 
 void Renderer::createUniformBuffers()
 {
-	vk::DeviceSize uniformBufferSize = sizeof(UniformBufferObject);
+	vk::DeviceSize uniformBufferSize = sizeof(GlobalUBO);
 	uniformBufferData.resize(swapChainImages.size());
 
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
@@ -1057,7 +1059,7 @@ void Renderer::createUniformBuffers()
 		);
 	}
 
-	vk::DeviceSize transformBufferSize = sizeof(TransformationUBO);
+	vk::DeviceSize transformBufferSize = sizeof(ObjectUBO);
 	transformationBufferData.resize(swapChainImages.size());
 
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
@@ -1116,8 +1118,8 @@ void Renderer::createDescriptorSets()
 
 	// populate descriptors
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
-		vk::DescriptorBufferInfo uniformBufferInfo(uniformBufferData[i].buffer.get(), 0, sizeof(UniformBufferObject));
-		//vk::DescriptorBufferInfo modelMatInfo(transformationBufferData[i].buffer.get(), 0, sizeof(TransformationUBO));
+		vk::DescriptorBufferInfo uniformBufferInfo(uniformBufferData[i].buffer.get(), 0, sizeof(GlobalUBO));
+		//vk::DescriptorBufferInfo modelMatInfo(transformationBufferData[i].buffer.get(), 0, sizeof(ObjectUBO));
 		//vk::DescriptorImageInfo imageInfo(textureSampler.get(), textureImageView.get(), vk::ImageLayout::eShaderReadOnlyOptimal);
 
 		std::array<vk::WriteDescriptorSet, 1> descriptorWrites = {
@@ -1181,8 +1183,8 @@ void Renderer::createObjectDescriptorSets()
 
 	// populate descriptors
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
-		//vk::DescriptorBufferInfo uniformBufferInfo(uniformBufferData[i].buffer.get(), 0, sizeof(UniformBufferObject));
-		vk::DescriptorBufferInfo modelMatInfo(transformationBufferData[i].buffer.get(), 0, sizeof(TransformationUBO));
+		//vk::DescriptorBufferInfo uniformBufferInfo(uniformBufferData[i].buffer.get(), 0, sizeof(GlobalUBO));
+		vk::DescriptorBufferInfo modelMatInfo(transformationBufferData[i].buffer.get(), 0, sizeof(ObjectUBO));
 		vk::DescriptorImageInfo imageInfo(textureSampler.get(), textureImageView.get(), vk::ImageLayout::eShaderReadOnlyOptimal);
 
 		std::array<vk::WriteDescriptorSet, 2> descriptorWrites = {
@@ -1278,36 +1280,40 @@ void Renderer::createCommandBuffers()
 		// bind the graphics pipeline
 		commandBuffers[i]->bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline.get());
 
-		//for (size_t j = 0; j < meshFactory.count(); j++)
-		//{
-		//	std::cout << "adding mesh" << std::endl;
+		for (size_t j = 0; j < meshFactory.count(); j++)
+		{
+			std::cout << "adding mesh" << std::endl;
 
-		//	// bind vertex buffers
-		//	commandBuffers[i]->bindVertexBuffers(0, meshFactory.getMesh(j)->getVertexBufferData(), { 0 });
-		//	commandBuffers[i]->bindIndexBuffer(meshFactory.getMesh(j)->getIndexBufferData(), 0, vk::IndexType::eUint32);
+			// bind vertex buffers
+			commandBuffers[i]->bindVertexBuffers(0, meshFactory.getMesh(j)->getVertexBufferData(), { 0 });
+			commandBuffers[i]->bindIndexBuffer(meshFactory.getMesh(j)->getIndexBufferData(), 0, vk::IndexType::eUint32);
 
-		//	// bind descriptor sets
-		//	commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, descriptorSets[i].get(), nullptr);
+			// bind descriptor sets
+			std::array<vk::DescriptorSet, 2> bindDescriptorSets;
+			bindDescriptorSets[0] = descriptorSets[i].get();
+			bindDescriptorSets[1] = meshFactory.getMesh(j)->getDescriptorSet(i);
 
-		//	// draw
-		//	commandBuffers[i]->drawIndexed(static_cast<uint32_t>(meshFactory.getMesh(j)->indices.size()), 1, 0, 0, 0);
-		//}
+			commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, bindDescriptorSets, nullptr);
 
-		// bind vertex buffers
-		std::array<vk::Buffer, 1> vertexBuffers = { vertexBufferData.buffer.get() };
-		std::array<vk::DeviceSize, 1> offsets = { 0 };
-		commandBuffers[i]->bindVertexBuffers(0, vertexBuffers, offsets);
-		commandBuffers[i]->bindIndexBuffer(indexBufferData.buffer.get(), 0, vk::IndexType::eUint32);
+			// draw
+			commandBuffers[i]->drawIndexed(static_cast<uint32_t>(meshFactory.getMesh(j)->indices.size()), 1, 0, 0, 0);
+		}
 
-		// bind descriptor sets
-		std::array<vk::DescriptorSet, 2> bindDescriptorSets;
-		bindDescriptorSets[0] = descriptorSets[i].get();
-		bindDescriptorSets[1] = objectDescriptorSets[i].get();
+		//// bind vertex buffers
+		//std::array<vk::Buffer, 1> vertexBuffers = { vertexBufferData.buffer.get() };
+		//std::array<vk::DeviceSize, 1> offsets = { 0 };
+		//commandBuffers[i]->bindVertexBuffers(0, vertexBuffers, offsets);
+		//commandBuffers[i]->bindIndexBuffer(indexBufferData.buffer.get(), 0, vk::IndexType::eUint32);
 
-		commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, bindDescriptorSets, nullptr);
+		//// bind descriptor sets
+		//std::array<vk::DescriptorSet, 2> bindDescriptorSets;
+		//bindDescriptorSets[0] = descriptorSets[i].get();
+		//bindDescriptorSets[1] = objectDescriptorSets[i].get();
 
-		// draw
-		commandBuffers[i]->drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		//commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, bindDescriptorSets, nullptr);
+
+		//// draw
+		//commandBuffers[i]->drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 		// end the render pass
 		commandBuffers[i]->endRenderPass();
@@ -1390,8 +1396,15 @@ void Renderer::rebuildCommandBuffers()
 			commandBuffers[i]->bindIndexBuffer(meshFactory.getMesh(j)->getIndexBufferData(), 0, vk::IndexType::eUint32);
 
 			// bind descriptor sets
-			commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, meshFactory.getMesh(j)->getDescriptorSet(i), nullptr);
+			//commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, meshFactory.getMesh(j)->getDescriptorSet(i), nullptr);
 			//commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, descriptorSets[i].get(), nullptr);
+
+			// bind descriptor sets
+			std::array<vk::DescriptorSet, 2> bindDescriptorSets;
+			bindDescriptorSets[0] = descriptorSets[i].get();
+			bindDescriptorSets[1] = meshFactory.getMesh(j)->getDescriptorSet(i);
+
+			commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, bindDescriptorSets, nullptr);
 
 			// draw
 			commandBuffers[i]->drawIndexed(static_cast<uint32_t>(meshFactory.getMesh(j)->indices.size()), 1, 0, 0, 0);
@@ -1427,7 +1440,7 @@ void Renderer::updateUniformBuffer(uint32_t currentImage)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	{
-		UniformBufferObject ubo{};
+		GlobalUBO ubo{};
 		//ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -0.5f, 0.0f));
 		//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.5f, 0.0f, 1.0f));
 		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -1440,7 +1453,7 @@ void Renderer::updateUniformBuffer(uint32_t currentImage)
 	}
 
 	{
-		TransformationUBO ubo{};
+		ObjectUBO ubo{};
 		//ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -0.5f, 0.0f));
 		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.5f, 0.0f, 1.0f));
 

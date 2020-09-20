@@ -177,6 +177,7 @@
     <ClInclude Include="Engine.h" />
     <ClInclude Include="ImageData.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="ObjectUBO.h" />
     <ClInclude Include="Primitives.h" />
     <ClInclude Include="QueueFamilyIndices.h" />
     <ClInclude Include="Renderer.h" />
@@ -184,7 +185,7 @@
     <ClInclude Include="src\allocator\bAllocator.h" />
     <ClInclude Include="SurfaceData.h" />
     <ClInclude Include="SwapChainSupportDetails.h" />
-    <ClInclude Include="UniformBufferObject.h" />
+    <ClInclude Include="GlobalUBO.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VulkanContext.h" />
     <ClInclude Include="VulkanUtils.h" />

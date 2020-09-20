@@ -15,7 +15,7 @@ public:
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 	// Texture
-	Mesh(MeshFactory& manager, VulkanContext* context, std::vector<Vertex> vertices, std::vector<uint32_t> indices) : vertices(vertices), indices(indices), manager(manager)
+	Mesh(MeshFactory& manager, VulkanContext* context, std::vector<Vertex> vertices, std::vector<uint32_t> indices, glm::vec3 position) : vertices(vertices), indices(indices), manager(manager), position(position)
 	{
 		setupMesh(context);
 		setrandoms();
@@ -36,6 +36,7 @@ public:
 	void updateUniformBuffer(VulkanContext* context, uint32_t currentImage);
 
 private:
+	glm::vec3 position;
 	float xpos = 0.f;
 	float random;
 
@@ -43,7 +44,7 @@ private:
 
 	BufferData vertexBufferData;
 	BufferData indexBufferData;
-	std::vector<BufferData> uniformBufferData;
+	//std::vector<BufferData> uniformBufferData;
 	std::vector<BufferData> transformationBufferData;
 
 	std::vector<vk::UniqueDescriptorSet> descriptorSets;
@@ -61,9 +62,9 @@ class MeshFactory
 public:
 	MeshFactory(VulkanContext* context) : context(context) { }
 
-	Mesh& create(std::vector<Vertex> vertices, std::vector<uint32_t> indices)
+	Mesh& create(std::vector<Vertex> vertices, std::vector<uint32_t> indices, glm::vec3 position)
 	{
-		Mesh* mesh = new Mesh(*this, context, vertices, indices);
+		Mesh* mesh = new Mesh(*this, context, vertices, indices, position);
 		std::unique_ptr<Mesh> uPtr{ mesh };
 		meshes.emplace_back(std::move(uPtr));
 

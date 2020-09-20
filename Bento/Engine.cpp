@@ -27,10 +27,10 @@ void Engine::initialize(const char* title, int screenWidth, int screenHeight)
 
 	//MeshFactory meshFactory(&renderer.context);
 	//auto& cube = renderer.meshFactory.create(Cube::vertices, Cube::indices);
-	//auto& plane = renderer.meshFactory.create(Plane::vertices, Plane::indices);
-	//auto& quad = renderer.meshFactory.create(Quad::vertices, Quad::indices);
+	auto& plane = renderer.meshFactory.create(Plane::vertices, Plane::indices, glm::vec3(1.0f, 0.0f, 0.0f));
+	auto& quad = renderer.meshFactory.create(Quad::vertices, Quad::indices, glm::vec3(0.0f, 0.0f, 0.0f));
 
-	//renderer.rebuildCommandBuffers();
+	renderer.rebuildCommandBuffers();
 }
 
 void Engine::run()
