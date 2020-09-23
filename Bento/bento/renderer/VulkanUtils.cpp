@@ -1,5 +1,6 @@
 #include "bpch.h"
 #include "VulkanUtils.h"
+#include "bento/core/log.h"
 
 
 namespace bento::VulkanUtils
@@ -143,7 +144,7 @@ namespace bento::VulkanUtils
 		VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void* pUserData)
 	{
-		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+		log::error("validation layer: {}", pCallbackData->pMessage);
 
 		return VK_FALSE;
 	}

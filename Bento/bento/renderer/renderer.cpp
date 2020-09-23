@@ -12,6 +12,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <stb_image.h>
+#include "bento/core/log.h"
 
 namespace bento
 {
@@ -822,7 +823,7 @@ namespace bento
 			//vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlags(), queueFamilyIndices.graphicsFamily.value()));
 			vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, queueFamilyIndices.graphicsFamily.value()));
 
-		std::cout << "[INFO] : " << "Created command pool" << std::endl;
+		log::trace("Created command pool");
 	}
 
 	void Renderer::createDepthResources()
@@ -845,7 +846,7 @@ namespace bento
 		// create the depth image view
 		depthImageView = VulkanUtils::createImageView(device.get(), depthImage.image.get(), depthFormat, vk::ImageAspectFlagBits::eDepth);
 
-		std::cout << "[INFO] : " << "Created depth resources" << std::endl;
+		log::trace("Created depth resources");
 	}
 
 	void Renderer::createTextureImage()
@@ -917,14 +918,14 @@ namespace bento
 			vk::ImageLayout::eShaderReadOnlyOptimal
 		);
 
-		std::cout << "[INFO] : " << "Created texture image" << std::endl;
+		log::trace("Created texture image");
 	}
 
 	void Renderer::createTextureImageView()
 	{
 		textureImageView = VulkanUtils::createImageView(device.get(), textureImage.image.get(), vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
 
-		std::cout << "[INFO] : " << "Created texture image view" << std::endl;
+		log::trace("Created texture image view");
 	}
 
 	void Renderer::createTextureSampler()
@@ -958,7 +959,7 @@ namespace bento
 
 		textureSampler = device->createSamplerUnique(samplerInfo);
 
-		std::cout << "[INFO] : " << "Created texture sampler" << std::endl;
+		log::trace("Created texture sampler");
 	}
 
 	void Renderer::createVertexBuffer()
@@ -997,7 +998,7 @@ namespace bento
 			vertexBufferData.buffer.get(), bufferSize
 		);
 
-		std::cout << "[INFO] : " << "Created vertex buffer" << std::endl;
+		log::trace("Created vertex buffer");
 	}
 
 	void Renderer::createIndexBuffer()
@@ -1036,7 +1037,7 @@ namespace bento
 			indexBufferData.buffer.get(), bufferSize
 		);
 
-		std::cout << "[INFO] : " << "Created index buffer" << std::endl;
+		log::trace("Created index buffer");
 	}
 
 	void Renderer::createUniformBuffers()
@@ -1067,7 +1068,7 @@ namespace bento
 			);
 		}
 
-		std::cout << "[INFO] : " << "Created uniform buffers" << std::endl;
+		log::trace("Created uniform buffers");
 	}
 
 	void Renderer::createDescriptorPool()
@@ -1078,12 +1079,12 @@ namespace bento
 			vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, swapChainImages.size()),
 			//vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, swapChainImages.size())
 		};
-		std::cout << "[WARNING] : " << "Arbitrarily changing set count for descriptor pool" << std::endl;
+		log::warn("Arbitrarily changing set count for descriptor pool");
 		vk::DescriptorPoolCreateInfo poolInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, swapChainImages.size() * 10, 1, poolSizes.data());
 
 		descriptorPool = device->createDescriptorPoolUnique(poolInfo);
 
-		std::cout << "[INFO] : " << "Created descriptor pool" << std::endl;
+		log::trace("Created descriptor pool");
 	}
 
 	void Renderer::createObjectDescriptorPool()
@@ -1094,12 +1095,13 @@ namespace bento
 			vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, swapChainImages.size()),
 			vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, swapChainImages.size())
 		};
-		std::cout << "[WARNING] : " << "Arbitrarily changing set count for descriptor pool" << std::endl;
+		log::warn("Arbitrarily changing set count for descriptor pool");
 		vk::DescriptorPoolCreateInfo poolInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, swapChainImages.size() * 10, 1, poolSizes.data());
 
 		objectDescriptorPool = device->createDescriptorPoolUnique(poolInfo);
 
 		std::cout << "[INFO] : " << "Created object descriptor pool" << std::endl;
+		log::trace("Created object descriptor pool");
 	}
 
 	void Renderer::createDescriptorSets()
@@ -1154,6 +1156,7 @@ namespace bento
 		}
 
 		std::cout << "[INFO] : " << "Created descriptor set" << std::endl;
+		log::trace("Created descriptor set");
 	}
 
 	void Renderer::createObjectDescriptorSets()
@@ -1218,7 +1221,7 @@ namespace bento
 			device->updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 		}
 
-		std::cout << "[INFO] : " << "Created object descriptor set" << std::endl;
+		log::trace("Created object descriptor set");
 	}
 
 	void Renderer::createCommandBuffers()
@@ -1317,7 +1320,7 @@ namespace bento
 			commandBuffers[i]->end();
 		}
 
-		std::cout << "[INFO] : " << "Created command buffers" << std::endl;
+		log::trace("Created command buffers");
 	}
 
 	void Renderer::createSyncObjects()
@@ -1334,8 +1337,8 @@ namespace bento
 			// create already signaled so it works on the first frame
 			inFlightFences[i] = device->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
 		}
-
-		std::cout << "[INFO] : " << "Created sync objects" << std::endl;
+		
+		log::trace("Created sync objects");
 	}
 
 	void Renderer::rebuildCommandBuffers()
@@ -1424,7 +1427,7 @@ namespace bento
 			commandBuffers[i]->end();
 		}
 
-		std::cout << "[INFO] : " << "Rebuilt command buffers" << std::endl;
+		log::trace("Rebuilt command buffers");
 	}
 
 	void Renderer::updateUniformBuffer(uint32_t currentImage)
