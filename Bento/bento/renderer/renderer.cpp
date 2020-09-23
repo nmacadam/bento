@@ -14,10 +14,15 @@
 #include <stb_image.h>
 #include "bento/core/log.h"
 
+#include "imgui.h"
+
 namespace bento
 {
 	Renderer::Renderer()
 	{
+		IMGUI_CHECKVERSION();
+		//ImGui::CreateContext();
+		//ImGui::StyleColorsDark();
 	}
 
 
