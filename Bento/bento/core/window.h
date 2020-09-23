@@ -5,11 +5,11 @@
 
 namespace bento
 {
-	class window
+	class Window
 	{
 	public:
-		window();
-		~window();
+		Window();
+		~Window();
 
 		void initialize(const char* title, int screenWidth, int screenHeight);
 

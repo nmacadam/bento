@@ -1,28 +1,29 @@
-#include "window.h"
+#include "bpch.h"
+#include "Window.h"
 #include <stdexcept>
 
 
 namespace bento
 {
-	window::window()
+	Window::Window()
 	{
 	}
 
 
-	window::~window()
+	Window::~Window()
 	{
 	}
 
-	void window::initialize(const char* title, int screenWidth, int screenHeight)
+	void Window::initialize(const char* title, int screenWidth, int screenHeight)
 	{
 		// initialize glfw without opengl
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-		// create window
+		// create Window
 		glfwWindow = glfwCreateWindow(screenWidth, screenHeight, title, nullptr, nullptr);
 		if (glfwWindow == nullptr)
 		{
-			throw std::runtime_error("failed to create GLFW window!");
+			throw std::runtime_error("failed to create GLFW Window!");
 		}
 	}
 }

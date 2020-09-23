@@ -27,13 +27,46 @@
     <ClInclude Include="bento\core\log.h" />
     <ClInclude Include="bento\core\state.h" />
     <ClInclude Include="bento\core\stateStack.h" />
+    <ClInclude Include="bento\renderer\BufferData.h" />
+    <ClInclude Include="bento\renderer\GlobalUBO.h" />
+    <ClInclude Include="bento\renderer\ImageData.h" />
+    <ClInclude Include="bento\renderer\ObjectUBO.h" />
+    <ClInclude Include="bento\renderer\Primitives.h" />
+    <ClInclude Include="bento\renderer\QueueFamilyIndices.h" />
+    <ClInclude Include="bento\renderer\renderer.h" />
+    <ClInclude Include="bento\renderer\SwapChainSupportDetails.h" />
+    <ClInclude Include="bento\renderer\Vertex.h" />
+    <ClInclude Include="bento\renderer\VulkanContext.h" />
+    <ClInclude Include="bpch.h" />
+    <ClInclude Include="bento\renderer\Shader.h" />
+    <ClInclude Include="bento\renderer\VulkanUtils.h" />
+    <ClInclude Include="bento\renderer\Mesh.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bento\core\application.cpp" />
+    <ClCompile Include="bento\core\impl.cpp" />
     <ClCompile Include="bento\core\window.cpp" />
     <ClCompile Include="bento\core\log.cpp" />
     <ClCompile Include="bento\core\state.cpp" />
     <ClCompile Include="bento\core\stateStack.cpp" />
+    <ClCompile Include="bento\renderer\renderer.cpp" />
+    <ClCompile Include="bpch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="bento\renderer\Shader.cpp" />
+    <ClCompile Include="bento\renderer\VulkanUtils.cpp" />
+    <ClCompile Include="bento\renderer\Mesh.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -108,9 +141,11 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>bpch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Lib32;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\lib-vc2017;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -123,9 +158,11 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>bpch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Lib;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\lib-vc2017;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -140,9 +177,11 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>bpch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -161,9 +200,11 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>bpch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

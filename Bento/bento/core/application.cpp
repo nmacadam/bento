@@ -1,3 +1,4 @@
+#include "bpch.h"
 #include "application.h"
 
 #include <glm/vec4.hpp>
@@ -20,6 +21,16 @@ namespace bento
 	{
 		glfwInit();
 		window.initialize(title, screenWidth, screenHeight);
+		renderer.initialize(&window);
+
+		// set window resize callback for renderer
+		glfwSetWindowUserPointer(window.getHandle(), &renderer);
+		glfwSetFramebufferSizeCallback(window.getHandle(), Renderer::framebufferResizeCallback);
+
+		auto& plane = renderer.meshFactory.create(Plane::vertices, Plane::indices, glm::vec3(1.0f, 0.0f, 0.0f));
+		auto& quad = renderer.meshFactory.create(Quad::vertices, Quad::indices, glm::vec3(0.0f, 0.0f, 0.0f));
+
+		renderer.rebuildCommandBuffers();
 
 		log::info("initialized");
 	}
@@ -64,16 +75,17 @@ namespace bento
 
 	void application::start()
 	{
-		stack.top()->start();
+		//stack.top()->start();
 	}
 
 	void application::update()
 	{
-		stack.top()->update();
+		//stack.top()->update();
 	}
 
 	void application::render()
 	{
-		stack.top()->render();
+		renderer.drawFrame();
+		//stack.top()->render();
 	}
 }

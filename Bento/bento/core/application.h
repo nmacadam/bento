@@ -1,6 +1,7 @@
 #pragma once
-#include "window.h"
+#include "Window.h"
 #include "stateStack.h"
+#include "bento/renderer/Renderer.h"
 
 int main(int argc, char** argv);
 
@@ -20,7 +21,8 @@ namespace bento
 		void popState();
 
 	private:
-		window window;
+		Window window;
+		Renderer renderer;
 		stateStack stack;
 
 		void start();

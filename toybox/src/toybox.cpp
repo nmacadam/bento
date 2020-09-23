@@ -9,12 +9,12 @@ class toyboxState : public bento::state
 
 	void update() override
 	{
-		bento::log::info("state update");
+		//bento::log::info("state update");
 	}
 
 	void render() override
 	{
-		bento::log::info("state render");
+		//bento::log::info("state render");
 	}
 };
 
