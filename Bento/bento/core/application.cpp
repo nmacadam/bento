@@ -75,17 +75,17 @@ namespace bento
 
 	void application::start()
 	{
-		//stack.top()->start();
+		stack.top()->start();
 	}
 
 	void application::update()
 	{
-		//stack.top()->update();
+		stack.top()->update();
 	}
 
 	void application::render()
 	{
 		renderer.drawFrame();
-		//stack.top()->render();
+		stack.top()->render();
 	}
 }
