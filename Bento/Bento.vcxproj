@@ -141,7 +141,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;$(SolutionDir)\bento\vendor\entt\include;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -158,7 +158,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;$(SolutionDir)\bento\vendor\entt\include;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -177,7 +177,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;$(SolutionDir)\bento\vendor\entt\include;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -200,7 +200,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;$(SolutionDir)\bento\vendor\entt\include;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
