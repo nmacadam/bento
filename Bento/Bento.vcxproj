@@ -37,6 +37,7 @@
     <ClInclude Include="bento\renderer\QueueFamilyIndices.h" />
     <ClInclude Include="bento\renderer\renderer.h" />
     <ClInclude Include="bento\renderer\SwapChainSupportDetails.h" />
+    <ClInclude Include="bento\renderer\UniqueAllocation.h" />
     <ClInclude Include="bento\renderer\Vertex.h" />
     <ClInclude Include="bento\renderer\VulkanContext.h" />
     <ClInclude Include="bpch.h" />

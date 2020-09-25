@@ -4,6 +4,7 @@
 #include "SwapChainSupportDetails.h"
 #include "BufferData.h"
 #include "ImageData.h"
+#include <vk_mem_alloc.h>
 
 namespace bento::VulkanUtils
 {
@@ -11,11 +12,11 @@ namespace bento::VulkanUtils
 	//vk::UniqueDebugUtilsMessengerEXT createDebugUtilsMessenger(vk::UniqueInstance & instance);
 	VkDebugUtilsMessengerEXT createDebugUtilsMessenger(vk::UniqueInstance & instance);
 
-	BufferData createBuffer(vk::Device device, vk::DeviceSize size, vk::PhysicalDevice physicalDevice,
+	BufferData createBuffer(/*VmaAllocator allocator, */vk::Device device, vk::DeviceSize size, vk::PhysicalDevice physicalDevice,
 	                        vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memoryProperties);
 	//BufferData createBuffer(VmaAllocator* allocator, vk::Device device, vk::DeviceSize size, vk::PhysicalDevice physicalDevice, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memoryProperties);
 
-	ImageData createImage(vk::Device device, vk::PhysicalDevice physicalDevice, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling,
+	ImageData createImage(VmaAllocator allocator, vk::Device device, vk::PhysicalDevice physicalDevice, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling,
 		vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties);
 
 	vk::UniqueImageView createImageView(vk::Device device, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags);

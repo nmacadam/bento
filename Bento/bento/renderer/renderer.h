@@ -38,7 +38,7 @@ namespace bento
 		MeshFactory meshFactory = MeshFactory(&context);
 
 	private:
-		ImGuiLayer imGuiLayer = ImGuiLayer(&context);
+		//ImGuiLayer imGuiLayer = ImGuiLayer(&context);
 
 		const std::vector<Vertex> vertices = Cube::vertices;
 		const std::vector<uint32_t> indices = Cube::indices;

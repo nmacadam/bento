@@ -1,5 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
+//#include <vk_mem_alloc.h>
 
 namespace bento
 {
@@ -7,6 +8,7 @@ namespace bento
 	{
 		vk::UniqueBuffer buffer;
 		vk::UniqueDeviceMemory memory;
+		//VmaAllocation allocation;
 		vk::Device device;
 
 		void* mapped = nullptr;

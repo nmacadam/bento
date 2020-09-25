@@ -24,9 +24,25 @@ namespace bento::VulkanUtils
 		return debugMessenger;
 	}
 
-	BufferData createBuffer(vk::Device device, vk::DeviceSize size, vk::PhysicalDevice physicalDevice,
+	BufferData createBuffer(/*VmaAllocator allocator,*/ vk::Device device, vk::DeviceSize size, vk::PhysicalDevice physicalDevice,
 		vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memoryProperties)
 	{
+		//BufferData data;
+		//data.device = device;
+
+		//VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+		//bufferInfo.size = size;
+		//bufferInfo.usage = static_cast<VkBufferUsageFlags>(usage);
+		////bufferInfo.size = 65536;
+		////bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+		//VmaAllocationCreateInfo allocInfo = {};
+		//allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+		//vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, reinterpret_cast<VkBuffer*>(&data.buffer.get()), &data.allocation, nullptr);
+
+		//return data;
+
 		BufferData data;
 		data.device = device;
 
@@ -50,6 +66,8 @@ namespace bento::VulkanUtils
 			)
 		);
 
+		//vk::BufferUsageFlagBits::
+
 		// this bad! use VMA!
 		data.memory = device.allocateMemoryUnique(memoryAllocateInfo);
 
@@ -60,9 +78,43 @@ namespace bento::VulkanUtils
 		return data;
 	}
 
-	ImageData createImage(vk::Device device, vk::PhysicalDevice physicalDevice, uint32_t width, uint32_t height,
+	ImageData createImage(VmaAllocator allocator, vk::Device device, vk::PhysicalDevice physicalDevice, uint32_t width, uint32_t height,
 		vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties)
 	{
+		//ImageData data;
+
+		//// specify image data to create a image from
+		//vk::ImageCreateInfo imageInfo(
+		//	{},
+		//	vk::ImageType::e2D,
+		//	format,
+		//	vk::Extent3D(width, height, 1),
+		//	1,
+		//	1,
+		//	vk::SampleCountFlagBits::e1,
+		//	tiling,
+		//	usage,
+		//	vk::SharingMode::eExclusive
+		//);
+
+		//// create image
+		//data.image = device.createImageUnique(imageInfo);
+
+		//// collect memory requirements and allocation info for image memory
+		//vk::MemoryRequirements memoryRequirements = device.getImageMemoryRequirements(data.image.get());
+		//vk::MemoryAllocateInfo allocateInfo(
+		//	memoryRequirements.size,
+		//	VulkanUtils::findMemoryType(physicalDevice.getMemoryProperties(), memoryRequirements.memoryTypeBits, properties)
+		//);
+
+		//// allocate memory
+		//data.memory = device.allocateMemoryUnique(allocateInfo);
+
+		//// bind image to memory
+		//device.bindImageMemory(data.image.get(), data.memory.get(), 0);
+
+		//return data;
+
 		ImageData data;
 
 		// specify image data to create a image from
@@ -79,21 +131,45 @@ namespace bento::VulkanUtils
 			vk::SharingMode::eExclusive
 		);
 
-		// create image
 		data.image = device.createImageUnique(imageInfo);
 
-		// collect memory requirements and allocation info for image memory
 		vk::MemoryRequirements memoryRequirements = device.getImageMemoryRequirements(data.image.get());
 		vk::MemoryAllocateInfo allocateInfo(
 			memoryRequirements.size,
 			VulkanUtils::findMemoryType(physicalDevice.getMemoryProperties(), memoryRequirements.memoryTypeBits, properties)
 		);
 
-		// allocate memory
-		data.memory = device.allocateMemoryUnique(allocateInfo);
 
-		// bind image to memory
-		device.bindImageMemory(data.image.get(), data.memory.get(), 0);
+		// the fact that i dont specify anything about the memory like i did above might also be the problem(s)
+
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+		allocInfo.memoryTypeBits = memoryRequirements.memoryTypeBits;
+		allocInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(properties);
+
+		if (!allocator)
+		{
+			log::error("allocator null");
+		}
+		if (!reinterpret_cast<VkImageCreateInfo*>(&imageInfo))
+		{
+			log::error("imageInfo null");
+		}
+		if (!&allocInfo)
+		{
+			log::error("allocInfo null");
+		}
+		if (!reinterpret_cast<VkImageCreateInfo*>(&imageInfo))
+		{
+			log::error("image null");
+		}
+		if (!&data.allocation)
+		{
+			log::error("pAllocation null");
+		}
+
+		// might be the problem
+		vmaCreateImage(allocator, reinterpret_cast<VkImageCreateInfo*>(&imageInfo), &allocInfo, reinterpret_cast<VkImage*>(&data.image.get()), &data.allocation, nullptr);
 
 		return data;
 	}

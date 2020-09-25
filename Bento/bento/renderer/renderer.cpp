@@ -156,6 +156,14 @@ namespace bento
 
 	void Renderer::clean()
 	{
+		vmaDestroyImage(allocator, static_cast<VkImage>(depthImage.image.get()), depthImage.allocation);
+		vmaDestroyImage(allocator, static_cast<VkImage>(textureImage.image.get()), textureImage.allocation);
+
+		//vmaFreeMemory(allocator, depthImage.allocation);
+		//vmaFreeMemory(allocator, textureImage.allocation);
+
+		vmaDestroyAllocator(allocator);
+
 		device->waitIdle();
 
 		// Unique references will automatically be deallocated
@@ -195,7 +203,7 @@ namespace bento
 		createDescriptorSets();
 		//createObjectDescriptorSets();
 
-		imGuiLayer.initialize(renderPass.get(), swapChainExtent.width, swapChainExtent.height);
+		//imGuiLayer.initialize(renderPass.get(), swapChainExtent.width, swapChainExtent.height);
 
 		allocateCommandBuffers();
 		createCommandBuffers();
@@ -208,8 +216,11 @@ namespace bento
 	{
 		// release unique pointers so each element can be recreated afterwards
 		device->destroyImageView(depthImageView.release());
-		device->destroyImage(depthImage.image.release());
-		device->freeMemory(depthImage.memory.release());
+
+		//device->destroyImage(depthImage.image.release());
+		//device->freeMemory(depthImage.memory.release());
+		vmaDestroyImage(allocator, static_cast<VkImage>(depthImage.image.get()), depthImage.allocation);
+		vmaFreeMemory(allocator, depthImage.allocation);
 
 		for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
 			device->destroyFramebuffer(swapChainFramebuffers[i].release());
@@ -423,9 +434,9 @@ namespace bento
 		allocatorInfo.device = static_cast<VkDevice>(device.get());
 		allocatorInfo.instance = static_cast<VkInstance>(instance.get());
 
-		VmaAllocator allocator;
 		vmaCreateAllocator(&allocatorInfo, &allocator);
 
+		context.allocator = allocator;
 		log::trace("Created memory allocator");
 	}
 
@@ -879,6 +890,7 @@ namespace bento
 
 		// create the depth image
 		depthImage = VulkanUtils::createImage(
+			allocator,
 			device.get(),
 			physicalDevice,
 			swapChainExtent.width,
@@ -927,6 +939,7 @@ namespace bento
 
 		// create the image
 		textureImage = VulkanUtils::createImage(
+			allocator,
 			device.get(),
 			physicalDevice,
 			texWidth,

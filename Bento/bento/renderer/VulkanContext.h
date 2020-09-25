@@ -1,5 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
+#include <vk_mem_alloc.h>
 
 namespace bento
 {
@@ -9,6 +10,7 @@ namespace bento
 		vk::SurfaceKHR surface;
 		vk::Device device;
 		vk::PhysicalDevice physicalDevice;
+		VmaAllocator allocator;
 
 		vk::CommandPool commandPool;
 		vk::DescriptorPool descriptorPool;

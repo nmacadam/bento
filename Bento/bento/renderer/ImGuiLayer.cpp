@@ -114,6 +114,7 @@ namespace bento
 
 		// Create target image for copy
 		fontImageData = VulkanUtils::createImage(
+			context->allocator,
 			context->device,
 			context->physicalDevice,
 			texWidth,

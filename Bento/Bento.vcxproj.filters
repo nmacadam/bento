@@ -99,6 +99,9 @@
     <ClInclude Include="bento\renderer\ImGuiLayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="bento\renderer\UniqueAllocation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bento\core\application.cpp">

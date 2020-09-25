@@ -28,8 +28,8 @@ namespace bento
 		glfwSetWindowUserPointer(window.getHandle(), &renderer);
 		glfwSetFramebufferSizeCallback(window.getHandle(), Renderer::framebufferResizeCallback);
 
-		auto& plane = renderer.meshFactory.create(Plane::vertices, Plane::indices, glm::vec3(1.0f, 0.0f, 0.0f));
-		auto& quad = renderer.meshFactory.create(Quad::vertices, Quad::indices, glm::vec3(0.0f, 0.0f, 0.0f));
+		//auto& plane = renderer.meshFactory.create(Plane::vertices, Plane::indices, glm::vec3(1.0f, 0.0f, 0.0f));
+		//auto& quad = renderer.meshFactory.create(Quad::vertices, Quad::indices, glm::vec3(0.0f, 0.0f, 0.0f));
 
 		renderer.rebuildCommandBuffers();
 
@@ -60,6 +60,7 @@ namespace bento
 
 	void application::clean()
 	{
+		renderer.clean();
 		glfwTerminate();
 		log::info("cleaned");
 		system("pause\n");
