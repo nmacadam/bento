@@ -156,8 +156,11 @@ namespace bento
 
 	void Renderer::clean()
 	{
-		vmaDestroyImage(allocator, static_cast<VkImage>(depthImage.image.get()), depthImage.allocation);
-		vmaDestroyImage(allocator, static_cast<VkImage>(textureImage.image.get()), textureImage.allocation);
+		vmaDestroyImage(allocator, static_cast<VkImage>(depthImage.image.release()), depthImage.allocation);
+		vmaDestroyImage(allocator, static_cast<VkImage>(textureImage.image.release()), textureImage.allocation);
+
+		//device->destroyImage(depthImage.image.release());
+		//device->destroyImage(textureImage.image.release());
 
 		//vmaFreeMemory(allocator, depthImage.allocation);
 		//vmaFreeMemory(allocator, textureImage.allocation);
@@ -171,6 +174,8 @@ namespace bento
 		meshFactory.clean();
 
 		VulkanUtils::DestroyDebugUtilsMessengerEXT(instance->operator VkInstance_T*(), debugMessenger, nullptr);
+
+		log::info("cleaned renderer");
 	}
 
 	void Renderer::initalizeVulkan()
