@@ -21,6 +21,7 @@ namespace bento
 	{
 		glfwInit();
 		window.initialize(title, screenWidth, screenHeight);
+		//ImGui_ImplGlfw_InitForVulkan(window.getHandle(), true);
 		renderer.initialize(&window);
 
 		// set window resize callback for renderer
@@ -51,6 +52,7 @@ namespace bento
 		while (!glfwWindowShouldClose(window.getHandle()))
 		{
 			glfwPollEvents();
+			//ImGui_ImplGLFW
 			update();
 			render();
 		}

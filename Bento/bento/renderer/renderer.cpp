@@ -33,10 +33,15 @@ namespace bento
 	void Renderer::initialize(Window* window)
 	{
 		this->window = window;
+
+		//context.queue = graphicsQueue;
+
 		initalizeVulkan();
 
 		//VulkanContext vc = { &instance.get(), &surface.get(), &device.get(), &physicalDevice, &commandPool.get(), &graphicsQueue }
 
+		// setting these indivudally causes an issue with the descriptor sets for the objects?
+		/*.
 		context = VulkanContext{
 			instance.get(),
 			surface.get(),
@@ -51,7 +56,15 @@ namespace bento
 
 			textureSampler.get(),
 			textureImageView.get()
-		};
+		};*/
+
+		// move out
+		context.sampler = textureSampler.get();
+		context.imageView = textureImageView.get();
+
+		// this cant go here :(
+		// also the rebuild frame thing being two seperate things will make lots of problems; fix it
+		//..
 	}
 
 	void Renderer::drawFrame()
@@ -154,13 +167,14 @@ namespace bento
 
 	void Renderer::initalizeVulkan()
 	{
-		std::cout << "[INFO] : " << "Initializing Vulkan..." << std::endl;
+		log::info("Initializing Vulkan...");
 
 		createInstance();
 		setupDebugMessenger();
 		createSurface();
 		pickPhysicalDevice();
 		createLogicalDevice();
+		createAllocator();
 		createSwapChain();
 		createImageViews();
 		createRenderPass();
@@ -179,11 +193,15 @@ namespace bento
 		createDescriptorPool();
 		createObjectDescriptorPool();
 		createDescriptorSets();
-		createObjectDescriptorSets();
+		//createObjectDescriptorSets();
+
+		imGuiLayer.initialize(renderPass.get(), swapChainExtent.width, swapChainExtent.height);
+
+		allocateCommandBuffers();
 		createCommandBuffers();
 		createSyncObjects();
 
-		std::cout << "[INFO] : " << "Vulkan initialized" << std::endl;
+		log::info("Vulkan initialized");
 	}
 
 	void Renderer::cleanupSwapChain()
@@ -234,7 +252,7 @@ namespace bento
 
 		device->waitIdle();
 
-		std::cout << "[INFO] : " << "Recreating the swap chain" << std::endl;
+		log::info("Recreating the swap chain");
 
 		cleanupSwapChain();
 
@@ -286,7 +304,8 @@ namespace bento
 
 		instance = vk::createInstanceUnique(instanceCreateInfo);
 
-		std::cout << "[INFO] : " << "Created Vulkan instance" << std::endl;
+		context.instance = instance.get();
+		log::trace("Created Vulkan instance");
 	}
 
 	void Renderer::setupDebugMessenger()
@@ -295,7 +314,7 @@ namespace bento
 
 		debugMessenger = VulkanUtils::createDebugUtilsMessenger(instance);
 
-		std::cout << "[INFO] : " << "Created debug messenger" << std::endl;
+		log::trace("Created debug messenger");
 	}
 
 	void Renderer::createSurface()
@@ -308,7 +327,8 @@ namespace bento
 			surface = vk::UniqueSurfaceKHR(vk::SurfaceKHR(_surface), _deleter);
 		}
 
-		std::cout << "[INFO] : " << "Created surface" << std::endl;
+		context.surface = surface.get();
+		log::trace("Created surface");
 	}
 
 	void Renderer::pickPhysicalDevice()
@@ -335,7 +355,8 @@ namespace bento
 		vk::PhysicalDeviceProperties properties;
 		physicalDevice.getProperties(&properties);
 
-		std::cout << "[INFO] : " << "Selected physical device " << properties.deviceName << std::endl;
+		context.physicalDevice = physicalDevice;
+		log::trace("Selected physical device {}", properties.deviceName);
 	}
 
 	void Renderer::createLogicalDevice()
@@ -390,7 +411,22 @@ namespace bento
 		device->getQueue(indices.graphicsFamily.value(), 0, &graphicsQueue);
 		device->getQueue(indices.presentFamily.value(), 0, &presentQueue);
 
-		std::cout << "[INFO] : " << "Created logical device" << std::endl;
+		context.device = device.get();
+		context.queue = graphicsQueue;
+		log::trace("Created logical device");
+	}
+
+	void Renderer::createAllocator()
+	{
+		VmaAllocatorCreateInfo allocatorInfo = {};
+		allocatorInfo.physicalDevice = static_cast<VkPhysicalDevice>(physicalDevice);
+		allocatorInfo.device = static_cast<VkDevice>(device.get());
+		allocatorInfo.instance = static_cast<VkInstance>(instance.get());
+
+		VmaAllocator allocator;
+		vmaCreateAllocator(&allocatorInfo, &allocator);
+
+		log::trace("Created memory allocator");
 	}
 
 	void Renderer::createSwapChain()
@@ -458,7 +494,9 @@ namespace bento
 		swapChainImageFormat = surfaceFormat.format;
 		swapChainExtent = extent;
 
-		std::cout << "[INFO] : " << "Created swap chain" << std::endl;
+		context.swapChainExtent = extent;
+		context.swapChainImageCount = swapChainImages.size();
+		log::trace("Created swap chain");
 	}
 
 	// create a new image view for each swap chain image
@@ -475,7 +513,7 @@ namespace bento
 			swapChainImageViews.push_back(VulkanUtils::createImageView(device.get(), swapChainImage, swapChainImageFormat, vk::ImageAspectFlagBits::eColor));
 		}
 
-		std::cout << "[INFO] : " << "Created swap chain image views" << std::endl;
+		log::trace("Created swap chain image views");
 	}
 
 	void Renderer::createRenderPass()
@@ -554,7 +592,7 @@ namespace bento
 		);
 		renderPass = device->createRenderPassUnique(renderPassInfo);
 
-		std::cout << "[INFO] : " << "Created render pass" << std::endl;
+		log::trace("Created render pass");
 	}
 
 	void Renderer::createDescriptorSetLayout()
@@ -587,7 +625,8 @@ namespace bento
 		vk::DescriptorSetLayoutCreateInfo layoutInfo({}, bindings.size(), bindings.data());
 		descriptorSetLayout = device->createDescriptorSetLayoutUnique(layoutInfo);
 
-		std::cout << "[INFO] : " << "Created descriptor set layout" << std::endl;
+		//context.descriptorSetLayout = descriptorSetLayout.get();
+		log::trace("Created descriptor set layout");
 	}
 
 	void Renderer::createObjectDescriptorSetLayout()
@@ -615,15 +654,16 @@ namespace bento
 		vk::DescriptorSetLayoutCreateInfo layoutInfo({}, bindings.size(), bindings.data());
 		objectDescriptorSetLayout = device->createDescriptorSetLayoutUnique(layoutInfo);
 
-		std::cout << "[INFO] : " << "Created object descriptor set layout" << std::endl;
+		context.descriptorSetLayout = objectDescriptorSetLayout.get();
+		log::trace("Created object descriptor set layout");
 	}
 
 	void Renderer::createGraphicsPipeline()
 	{
 		// we now need to set up and configure a graphics pipeline for drawing an image
 		// this is effectively the process for getting stuff to the shaders
-		Shader vertexShader(device, "shaders/vert.spv");
-		Shader fragmentShader(device, "shaders/frag.spv");
+		Shader vertexShader(device.get(), "shaders/vert.spv");
+		Shader fragmentShader(device.get(), "shaders/frag.spv");
 
 		// assign the shaders to a specific pipeline stage
 		vk::PipelineShaderStageCreateInfo vertShaderStageInfo(
@@ -790,7 +830,7 @@ namespace bento
 		);
 		graphicsPipeline = device->createGraphicsPipelineUnique(nullptr, graphicsPipelineCreateInfo);
 
-		std::cout << "[INFO] : " << "Created graphics pipeline" << std::endl;
+		log::trace("Created graphics pipeline");
 	}
 
 	void Renderer::createFramebuffers()
@@ -816,7 +856,7 @@ namespace bento
 			swapChainFramebuffers.push_back(device->createFramebufferUnique(framebufferInfo));
 		}
 
-		std::cout << "[INFO] : " << "Created frame buffers" << std::endl;
+		log::trace("Created frame buffers");
 	}
 
 	void Renderer::createCommandPool()
@@ -828,6 +868,7 @@ namespace bento
 			//vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlags(), queueFamilyIndices.graphicsFamily.value()));
 			vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, queueFamilyIndices.graphicsFamily.value()));
 
+		context.commandPool = commandPool.get();
 		log::trace("Created command pool");
 	}
 
@@ -1089,6 +1130,7 @@ namespace bento
 
 		descriptorPool = device->createDescriptorPoolUnique(poolInfo);
 
+		//context.descriptorPool = descriptorPool.get();
 		log::trace("Created descriptor pool");
 	}
 
@@ -1105,7 +1147,7 @@ namespace bento
 
 		objectDescriptorPool = device->createDescriptorPoolUnique(poolInfo);
 
-		std::cout << "[INFO] : " << "Created object descriptor pool" << std::endl;
+		context.descriptorPool = objectDescriptorPool.get();
 		log::trace("Created object descriptor pool");
 	}
 
@@ -1160,76 +1202,75 @@ namespace bento
 			device->updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 		}
 
-		std::cout << "[INFO] : " << "Created descriptor set" << std::endl;
 		log::trace("Created descriptor set");
 	}
 
-	void Renderer::createObjectDescriptorSets()
-	{
-		/*{
-			std::vector<vk::DescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout.get());
+	//void Renderer::createObjectDescriptorSets()
+	//{
+	//	/*{
+	//		std::vector<vk::DescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout.get());
 
-			vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool.get(), swapChainImages.size(), layouts.data());
+	//		vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool.get(), swapChainImages.size(), layouts.data());
 
-			descriptorSets.resize(swapChainImages.size());
-			descriptorSets = device->allocateDescriptorSetsUnique(allocateInfo);
-		}*/
+	//		descriptorSets.resize(swapChainImages.size());
+	//		descriptorSets = device->allocateDescriptorSetsUnique(allocateInfo);
+	//	}*/
 
-		{
-			std::vector<vk::DescriptorSetLayout> layouts(swapChainImages.size(), objectDescriptorSetLayout.get());
+	//	{
+	//		std::vector<vk::DescriptorSetLayout> layouts(swapChainImages.size(), objectDescriptorSetLayout.get());
 
-			vk::DescriptorSetAllocateInfo allocateInfo(objectDescriptorPool.get(), swapChainImages.size(), layouts.data());
+	//		vk::DescriptorSetAllocateInfo allocateInfo(objectDescriptorPool.get(), swapChainImages.size(), layouts.data());
 
-			objectDescriptorSets.resize(swapChainImages.size());
-			objectDescriptorSets = device->allocateDescriptorSetsUnique(allocateInfo);
-		}
+	//		objectDescriptorSets.resize(swapChainImages.size());
+	//		objectDescriptorSets = device->allocateDescriptorSetsUnique(allocateInfo);
+	//	}
 
-		// populate descriptors
-		for (size_t i = 0; i < swapChainImages.size(); i++) {
-			//vk::DescriptorBufferInfo uniformBufferInfo(uniformBufferData[i].buffer.get(), 0, sizeof(GlobalUBO));
-			vk::DescriptorBufferInfo modelMatInfo(transformationBufferData[i].buffer.get(), 0, sizeof(ObjectUBO));
-			vk::DescriptorImageInfo imageInfo(textureSampler.get(), textureImageView.get(), vk::ImageLayout::eShaderReadOnlyOptimal);
+	//	// populate descriptors
+	//	for (size_t i = 0; i < swapChainImages.size(); i++) {
+	//		//vk::DescriptorBufferInfo uniformBufferInfo(uniformBufferData[i].buffer.get(), 0, sizeof(GlobalUBO));
+	//		vk::DescriptorBufferInfo modelMatInfo(transformationBufferData[i].buffer.get(), 0, sizeof(ObjectUBO));
+	//		vk::DescriptorImageInfo imageInfo(textureSampler.get(), textureImageView.get(), vk::ImageLayout::eShaderReadOnlyOptimal);
 
-			std::array<vk::WriteDescriptorSet, 2> descriptorWrites = {
-				/*vk::WriteDescriptorSet(
-					descriptorSets[i].get(),
-					0,
-					0,
-					1,
-					vk::DescriptorType::eUniformBuffer,
-					nullptr,
-					&uniformBufferInfo,
-					nullptr
-				),*/
-				vk::WriteDescriptorSet(
-					objectDescriptorSets[i].get(),
-					0,
-					0,
-					1,
-					vk::DescriptorType::eUniformBuffer,
-					nullptr,
-					&modelMatInfo,
-					nullptr
-				),
-				vk::WriteDescriptorSet(
-					objectDescriptorSets[i].get(),
-					1,
-					0,
-					1,
-					vk::DescriptorType::eCombinedImageSampler,
-					&imageInfo,
-					nullptr,
-					nullptr
-				)
-			};
+	//		std::array<vk::WriteDescriptorSet, 2> descriptorWrites = {
+	//			/*vk::WriteDescriptorSet(
+	//				descriptorSets[i].get(),
+	//				0,
+	//				0,
+	//				1,
+	//				vk::DescriptorType::eUniformBuffer,
+	//				nullptr,
+	//				&uniformBufferInfo,
+	//				nullptr
+	//			),*/
+	//			vk::WriteDescriptorSet(
+	//				objectDescriptorSets[i].get(),
+	//				0,
+	//				0,
+	//				1,
+	//				vk::DescriptorType::eUniformBuffer,
+	//				nullptr,
+	//				&modelMatInfo,
+	//				nullptr
+	//			),
+	//			vk::WriteDescriptorSet(
+	//				objectDescriptorSets[i].get(),
+	//				1,
+	//				0,
+	//				1,
+	//				vk::DescriptorType::eCombinedImageSampler,
+	//				&imageInfo,
+	//				nullptr,
+	//				nullptr
+	//			)
+	//		};
 
-			device->updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-		}
+	//		device->updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+	//	}
 
-		log::trace("Created object descriptor set");
-	}
+	//	log::trace("Created object descriptor set");
+	//}
 
-	void Renderer::createCommandBuffers()
+	void Renderer::allocateCommandBuffers()
 	{
 		commandBuffers.resize(swapChainFramebuffers.size());
 
@@ -1240,6 +1281,19 @@ namespace bento
 			commandBuffers.size()
 		);
 		commandBuffers = device->allocateCommandBuffersUnique(allocateInfo);
+	}
+
+	void Renderer::createCommandBuffers()
+	{
+		//commandBuffers.resize(swapChainFramebuffers.size());
+
+		//// create command buffers
+		//vk::CommandBufferAllocateInfo allocateInfo(
+		//	commandPool.get(),
+		//	vk::CommandBufferLevel::ePrimary,
+		//	commandBuffers.size()
+		//);
+		//commandBuffers = device->allocateCommandBuffersUnique(allocateInfo);
 
 		// start recording commands for each command buffer
 		for (size_t i = 0; i < commandBuffers.size(); i++) {
@@ -1283,6 +1337,10 @@ namespace bento
 			// bind the graphics pipeline
 			commandBuffers[i]->bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline.get());
 
+			// update imgui layer
+			//imGuiLayer.newFrame((currentFrame == 0));
+			//imGuiLayer.updateBuffers();
+
 			for (size_t j = 0; j < meshFactory.count(); j++)
 			{
 				std::cout << "adding mesh" << std::endl;
@@ -1301,6 +1359,8 @@ namespace bento
 				// draw
 				commandBuffers[i]->drawIndexed(static_cast<uint32_t>(meshFactory.getMesh(j)->indices.size()), 1, 0, 0, 0);
 			}
+
+			//imGuiLayer.drawFrame(commandBuffers[i].get());
 
 			//// bind vertex buffers
 			//std::array<vk::Buffer, 1> vertexBuffers = { vertexBufferData.buffer.get() };
@@ -1348,91 +1408,7 @@ namespace bento
 
 	void Renderer::rebuildCommandBuffers()
 	{
-		// start recording commands for each command buffer
-		for (size_t i = 0; i < commandBuffers.size(); i++) {
-			// none of the begin info flags are applicable for us right now
-			vk::CommandBufferBeginInfo beginInfo(
-				{},
-				nullptr
-			);
-
-			commandBuffers[i]->begin(beginInfo);
-
-			// configure render pass; include the pass itself and the attachments to bind
-			//renderPassInfo.renderArea.offset = vk::Offset2D(0, 0);
-			//renderPassInfo.renderArea.extent = swapChainExtent;
-
-			// include clear values for the color and depth image
-			std::array<vk::ClearValue, 2> clearValues = {
-				vk::ClearValue(vk::ClearColorValue(std::array<uint32_t, 4>{0, 0, 0, 1})),
-				vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0))
-			};
-
-			//renderPassInfo.clearValueCount = clearValues.size();
-			//renderPassInfo.pClearValues = clearValues.data();
-
-			if (swapChainFramebuffers[i].get() == nullptr)
-			{
-				std::cerr << "framebuffer is null!" << std::endl;
-			}
-
-			vk::RenderPassBeginInfo renderPassInfo(
-				renderPass.get(),
-				swapChainFramebuffers[i].get(),
-				vk::Rect2D(vk::Offset2D(0, 0), swapChainExtent),
-				clearValues.size(),
-				clearValues.data()
-			);
-
-			// begin the render pass
-			commandBuffers[i]->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-
-			// bind the graphics pipeline
-			commandBuffers[i]->bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline.get());
-
-			for (size_t j = 0; j < meshFactory.count(); j++)
-			{
-				std::cout << "adding mesh" << std::endl;
-
-				// bind vertex buffers
-				commandBuffers[i]->bindVertexBuffers(0, meshFactory.getMesh(j)->getVertexBufferData(), { 0 });
-				commandBuffers[i]->bindIndexBuffer(meshFactory.getMesh(j)->getIndexBufferData(), 0, vk::IndexType::eUint32);
-
-				// bind descriptor sets
-				//commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, meshFactory.getMesh(j)->getDescriptorSet(i), nullptr);
-				//commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, descriptorSets[i].get(), nullptr);
-
-				// bind descriptor sets
-				std::array<vk::DescriptorSet, 2> bindDescriptorSets;
-				bindDescriptorSets[0] = descriptorSets[i].get();
-				bindDescriptorSets[1] = meshFactory.getMesh(j)->getDescriptorSet(i);
-
-				commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, bindDescriptorSets, nullptr);
-
-				// draw
-				commandBuffers[i]->drawIndexed(static_cast<uint32_t>(meshFactory.getMesh(j)->indices.size()), 1, 0, 0, 0);
-			}
-
-			//// bind vertex buffers
-			//std::array<vk::Buffer, 1> vertexBuffers = { vertexBufferData.buffer.get() };
-			//std::array<vk::DeviceSize, 1> offsets = { 0 };
-			//commandBuffers[i]->bindVertexBuffers(0, vertexBuffers, offsets);
-			//commandBuffers[i]->bindIndexBuffer(indexBufferData.buffer.get(), 0, vk::IndexType::eUint32);
-
-			//// bind descriptor sets
-			//commandBuffers[i]->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout.get(), 0, descriptorSets[i].get(), nullptr);
-
-			//// draw
-			//commandBuffers[i]->drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-
-			// end the render pass
-			commandBuffers[i]->endRenderPass();
-
-			// finish recording
-			commandBuffers[i]->end();
-		}
-
-		log::trace("Rebuilt command buffers");
+		createCommandBuffers();
 	}
 
 	void Renderer::updateUniformBuffer(uint32_t currentImage)

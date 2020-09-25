@@ -44,6 +44,7 @@
     <ClInclude Include="bento\renderer\VulkanUtils.h" />
     <ClInclude Include="bento\renderer\Mesh.h" />
     <ClInclude Include="bento\ecs\Entity.h" />
+    <ClInclude Include="bento\renderer\ImGuiLayer.h" />
     <ClInclude Include="platform\glfw\imgui_impl_glfw.h" />
     <ClInclude Include="platform\vulkan\imgui_impl_vulkan.h" />
   </ItemGroup>
@@ -74,6 +75,7 @@
     <ClCompile Include="bento\renderer\VulkanUtils.cpp" />
     <ClCompile Include="bento\renderer\Mesh.cpp" />
     <ClCompile Include="bento\ecs\Entity.cpp" />
+    <ClCompile Include="bento\renderer\ImGuiLayer.cpp" />
     <ClCompile Include="platform\glfw\imgui_impl_glfw.cpp" />
     <ClCompile Include="platform\vulkan\imgui_impl_vulkan.cpp" />
   </ItemGroup>
@@ -150,7 +152,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;$(SolutionDir)\bento\vendor\entt\include;E:\VS_Dev_Lib\2020\imgui-docking;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\VulkanMemoryAllocator\src;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;$(SolutionDir)\bento\vendor\entt\include;E:\VS_Dev_Lib\2020\imgui-docking;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -167,7 +169,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;$(SolutionDir)\bento\vendor\entt\include;E:\VS_Dev_Lib\2020\imgui-docking;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\VulkanMemoryAllocator\src;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;$(SolutionDir)\bento\vendor\entt\include;E:\VS_Dev_Lib\2020\imgui-docking;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -186,7 +188,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;$(SolutionDir)\bento\vendor\entt\include;E:\VS_Dev_Lib\2020\imgui-docking;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\VulkanMemoryAllocator\src;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;$(SolutionDir)\bento\vendor\entt\include;E:\VS_Dev_Lib\2020\imgui-docking;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN32\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -209,7 +211,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;$(SolutionDir)\bento\vendor\entt\include;E:\VS_Dev_Lib\2020\imgui-docking;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VS_Dev_Lib\VulkanSDK\1.2.148.1\Include;E:\VS_Dev_Lib\2020\Vulkan-Hpp\Vulkan-Hpp;E:\VS_Dev_Lib\2020\VulkanMemoryAllocator\src;E:\VS_Dev_Lib\2020\glm;E:\VS_Dev_Lib\2020\stb;$(SolutionDir)\bento;$(SolutionDir)\bento\vendor\entt\include;E:\VS_Dev_Lib\2020\imgui-docking;E:\VS_Dev_Lib\2020\glfw-3.3.2.bin.WIN64\include;%(AdditionalIncludeDirectories);E:\VS_Dev_Lib\2020\spdlog\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>BENTO_BUILD_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>

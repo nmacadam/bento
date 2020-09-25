@@ -8,6 +8,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "bento/core/log.h"
 
 
 namespace bento
@@ -33,6 +34,7 @@ namespace bento
 
 	void Mesh::setupMesh(VulkanContext* context)
 	{
+		bento::log::warn("setting up mesh");
 		createVertexBuffer(context);
 		createIndexBuffer(context);
 		createUniformBuffer(context);
@@ -73,6 +75,7 @@ namespace bento
 			stagingBufferData.buffer.get(),
 			vertexBufferData.buffer.get(), bufferSize
 		);
+		bento::log::warn("created vertex buffer");
 	}
 
 	void Mesh::createIndexBuffer(VulkanContext* context)
@@ -110,6 +113,7 @@ namespace bento
 			stagingBufferData.buffer.get(),
 			indexBufferData.buffer.get(), bufferSize
 		);
+		bento::log::warn("created index buffer");
 	}
 
 	void Mesh::createUniformBuffer(VulkanContext* context)
@@ -139,6 +143,7 @@ namespace bento
 				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
 			);
 		}
+		bento::log::warn("created uniform buffer");
 	}
 
 	void Mesh::createDescriptorSet(VulkanContext* context)
@@ -181,5 +186,7 @@ namespace bento
 
 			context->device.updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 		}
+
+		bento::log::warn("created descriptor sets");
 	}
 }

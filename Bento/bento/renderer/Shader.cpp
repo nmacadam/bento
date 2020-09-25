@@ -2,10 +2,11 @@
 #include "Shader.h"
 
 #include <fstream>
+#include <filesystem>
 
 namespace bento
 {
-	Shader::Shader(vk::UniqueDevice& device, const char* path)
+	Shader::Shader(vk::Device& device, const char* path)
 	{
 		create(device, path);
 	}
@@ -14,14 +15,14 @@ namespace bento
 	{
 	}
 
-	void Shader::create(vk::UniqueDevice& device, const char* path)
+	void Shader::create(vk::Device& device, const char* path)
 	{
 		shaderModule = createShaderModule(device, readFile(path));
 	}
 
-	vk::UniqueShaderModule Shader::createShaderModule(vk::UniqueDevice& device, const std::vector<char>& code)
+	vk::UniqueShaderModule Shader::createShaderModule(vk::Device& device, const std::vector<char>& code)
 	{
-		return device->createShaderModuleUnique(vk::ShaderModuleCreateInfo({}, code.size(), reinterpret_cast<const uint32_t*>(code.data())));
+		return device.createShaderModuleUnique(vk::ShaderModuleCreateInfo({}, code.size(), reinterpret_cast<const uint32_t*>(code.data())));
 	}
 
 	EShLanguage Shader::translateShaderStage(vk::ShaderStageFlagBits stage)
@@ -48,6 +49,10 @@ namespace bento
 
 	std::vector<char> Shader::readFile(const std::string& filename)
 	{
+		/*if (!std::filesystem::exists(filename)) {
+			throw std::runtime_error("file does not exist!");
+		}*/
+
 		std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
 		if (!file.is_open()) {

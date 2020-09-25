@@ -60,5 +60,7 @@ namespace bento::VulkanUtils
 
 	void transitionImageLayout(vk::Device device, vk::CommandPool pool, vk::Queue queue, vk::Image image,
 	                           vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
+
+	const char* getDeviceName(vk::PhysicalDevice physicalDevice);
 }
 

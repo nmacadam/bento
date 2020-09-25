@@ -28,6 +28,7 @@ namespace bento::VulkanUtils
 		vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memoryProperties)
 	{
 		BufferData data;
+		data.device = device;
 
 		// create the buffer
 		vk::BufferCreateInfo bufferCreateInfo(
@@ -367,5 +368,13 @@ namespace bento::VulkanUtils
 
 		// end command recording
 		endSingleTimeCommands(commandBuffer, device, pool, queue);
+	}
+
+	const char* getDeviceName(vk::PhysicalDevice physicalDevice)
+	{
+		vk::PhysicalDeviceProperties properties;
+		physicalDevice.getProperties(&properties);
+
+		return properties.deviceName;
 	}
 }

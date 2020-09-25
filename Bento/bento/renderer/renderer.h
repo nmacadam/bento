@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
+#include <vk_mem_alloc.h>
 #include <vector>
 
 #include "../core/Window.h"
@@ -11,6 +12,7 @@
 #include "Mesh.h"
 #include "Primitives.h"
 #include "ImageData.h"
+#include "ImGuiLayer.h"
 
 namespace bento
 {
@@ -36,6 +38,8 @@ namespace bento
 		MeshFactory meshFactory = MeshFactory(&context);
 
 	private:
+		ImGuiLayer imGuiLayer = ImGuiLayer(&context);
+
 		const std::vector<Vertex> vertices = Cube::vertices;
 		const std::vector<uint32_t> indices = Cube::indices;
 
@@ -44,6 +48,7 @@ namespace bento
 		vk::UniqueInstance instance;
 		VkDebugUtilsMessengerEXT debugMessenger;
 		vk::UniqueSurfaceKHR surface;
+		VmaAllocator allocator;
 
 		vk::PhysicalDevice physicalDevice;
 		vk::UniqueDevice device;
@@ -124,7 +129,7 @@ namespace bento
 		void createSurface();
 		void pickPhysicalDevice();
 		void createLogicalDevice();
-		//void createMemoryAllocator();
+		void createAllocator();
 		void createSwapChain();
 		void createImageViews();
 		void createRenderPass();
@@ -145,7 +150,8 @@ namespace bento
 		void createDescriptorPool();
 		void createObjectDescriptorPool();
 		void createDescriptorSets();
-		void createObjectDescriptorSets();
+		//void createObjectDescriptorSets();
+		void allocateCommandBuffers();
 		void createCommandBuffers();
 		void createSyncObjects();
 
